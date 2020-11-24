@@ -1,0 +1,33 @@
+{
+  "name": "YouTube",
+  "date": "26.03.2020",
+  "version": "4.0.3",
+  "description": "YouTube — популярный мировой видеохостинг, где пользователи могут добавлять, просматривать, комментировать и делиться с друзьями видеозаписями.",
+  "author": {
+    "name": "BetaMaster"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atlk-kv/mag-youtube.git"
+  },
+  "config": {
+    "type": "app",
+    "category": "apps",
+    "backgroundColor": "#c12226",
+    "name": "YouTube",
+    "legacy": true,
+    "description": "YouTube — популярный мировой видеохостинг, где пользователи могут добавлять, просматривать, комментировать и делиться с друзьями видеозаписями.",
+    "icons": {
+      "paths": {
+        "480": "apps/magcore-app-youtube/3.0.13/img/480/",
+        "576": "apps/magcore-app-youtube/3.0.13/img/576/",
+        "720": "apps/magcore-app-youtube/3.0.13/img/720/",
+        "1080": "apps/magcore-app-youtube/3.0.13/img/1080/"
+      },
+      "states": {
+        "normal": "icons/normal.png",
+        "active": "icons/active.png"
+      }
+    }
+  }
+}

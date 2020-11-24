@@ -1,0 +1,15 @@
+# Env
+.env
+
+# IDE
+.idea
+nbproject
+.buildpath
+.project
+.settings
+
+# Mac DS_Store Files
+.DS_Store
+
+# composer vendor dir
+/vendor
