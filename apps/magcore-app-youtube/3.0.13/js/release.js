@@ -6955,7 +6955,7 @@ function debug(content) {
 
             try {
               //debug(result);
-              var ytInitialData = result.match(/ytInitialData = ({.+?});\s?\n/);
+              var ytInitialData = result.match(/ytInitialData = ({.+?});/);
               if (ytInitialData == null) {
                 debug(result);
               }
