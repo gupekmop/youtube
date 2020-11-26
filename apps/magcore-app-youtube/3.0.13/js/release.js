@@ -6240,8 +6240,8 @@ function debug(content) {
       },
       GUIDE: {
         icon: "info",
-        visible: false,
-        text: ""
+        visible: true,
+        text: gettext("Search")
       },
       BACK: {
         icon: "back",
@@ -6273,7 +6273,13 @@ function debug(content) {
   (function () {
     c = $(62);
     input.addListener("keydown", function (event) {
-      if (event.code === options.down) {
+      if (event.code === options.enter) {
+        ctrl.hide();
+        searchContactPanel.show();
+        notifyComment({
+          value: input.value
+        });
+      } else if (event.code === options.down) {
         a = input.getCaretPosition();
         c.focus();
       } else {
@@ -6291,11 +6297,11 @@ function debug(content) {
         }
       }
     });
-    input.addListener("input", function (comment) {
+    /*input.addListener("input", function (comment) {
       ctrl.hide();
       searchContactPanel.show();
       notifyComment(comment);
-    });
+    });*/
     c.addListener("overflow", function (data) {
       if (data.direction === options.up) {
         input.focus();
@@ -6322,10 +6328,15 @@ function debug(content) {
         }
       }
     });
-    c.addListener("keydown", function () {
-      notifyComment({
-        value: input.value
-      });
+    c.addListener("keydown", function (event) {
+      //Home || Menu || Info || PlayPause
+      if (event.code === 27 || event.code === "122c" || event.code === "89a" || event.code === "82a") {
+        ctrl.hide();
+        searchContactPanel.show();
+        notifyComment({
+          value: input.value
+        });
+      }
     });
     ctrl = new RootView({
       $node: document.getElementById("psListVideos"),
