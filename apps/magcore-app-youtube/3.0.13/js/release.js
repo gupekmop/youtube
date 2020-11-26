@@ -6273,7 +6273,8 @@ function debug(content) {
   (function () {
     c = $(62);
     input.addListener("keydown", function (event) {
-      if (event.code === options.enter) {
+      //OK || Info
+      if (event.code === options.enter || event.code === "89a") {
         ctrl.hide();
         searchContactPanel.show();
         notifyComment({
