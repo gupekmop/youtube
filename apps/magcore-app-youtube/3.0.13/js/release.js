@@ -8018,7 +8018,7 @@ function debug(content) {
     value: "\u0638",
     className: "symbol"
   }, {
-    value: "&nbsp;",
+    value: "Space",
     className: "icon keySpace",
     colSpan: 3
   }]];
@@ -8138,7 +8138,7 @@ function debug(content) {
     value: "&nbsp;",
     className: "keyGlobe"
   }], [{
-    value: "&nbsp;",
+    value: "Space",
     className: "icon keySpace",
     colSpan: 13
   }]];
@@ -8249,7 +8249,7 @@ function debug(content) {
     value: "&nbsp;",
     className: "keyGlobe"
   }], [{
-    value: "&nbsp;",
+    value: "Space",
     className: "icon keySpace",
     colSpan: 12
   }]];
@@ -8378,7 +8378,7 @@ function debug(content) {
     value: "&nbsp;",
     className: "keyGlobe"
   }], [{
-    value: "&nbsp;",
+    value: "\u041f\u0440\u043e\u0431\u0435\u043b",
     className: "icon keySpace",
     colSpan: 14
   }]];
@@ -8507,7 +8507,7 @@ function debug(content) {
     value: "&nbsp;",
     className: "keyGlobe"
   }], [{
-    value: "&nbsp;",
+    value: "\u041f\u0440\u043e\u0431\u0456\u043b",
     className: "icon keySpace",
     colSpan: 14
   }]];

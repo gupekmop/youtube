@@ -103,7 +103,7 @@ body {
     .icon.keySpace-sm:before {
         content: "\00e61d"; }
     .icon.keySpace:before {
-        content: "\00e61e"; }
+        content: ""; }
     .icon.like:before {
         content: "\00e61f"; }
     .icon.lips:before {
@@ -765,7 +765,7 @@ html[dir="rtl"] #psSearch {
     #psKeyboard .keySpace {
         display: table-cell;
         text-align: center;
-        font-size: 9px;
+        /*font-size: 9px;*/
         font-weight: bold;
         line-height: 18px; }
     #psKeyboard .keyDelete {
