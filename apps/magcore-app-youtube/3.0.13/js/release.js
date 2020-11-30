@@ -6273,13 +6273,18 @@ function debug(content) {
   (function () {
     c = $(62);
     input.addListener("keydown", function (event) {
-      //OK || Info
-      if (event.code === options.enter || event.code === "89a") {
+      if (event.code === options.ok || event.code === options.info || event.code === options.playPause) {//OK || Info || PlayPause
         ctrl.hide();
         searchContactPanel.show();
         notifyComment({
           value: input.value
         });
+      } else if (event.code === options.home || event.code === options.exit) {//Home || Exit
+          self.route(self.pages.main);
+          event.stop = true;
+      } else if (event.code === options.refresh) {//Refresh
+        input.setValue("");
+        a = input.getCaretPosition();
       } else if (event.code === options.down) {
         a = input.getCaretPosition();
         c.focus();
@@ -6330,13 +6335,18 @@ function debug(content) {
       }
     });
     c.addListener("keydown", function (event) {
-      //Home || Menu || Info || PlayPause
-      if (event.code === 27 || event.code === "122c" || event.code === "89a" || event.code === "82a") {
+      if (event.code === options.menu || event.code === options.info || event.code === options.playPause) {//Menu || Info || PlayPause
         ctrl.hide();
         searchContactPanel.show();
         notifyComment({
           value: input.value
         });
+      } else if (event.code === options.home || event.code === options.exit) {//Home || Exit
+        self.route(self.pages.main);
+        event.stop = true;
+      } else if (event.code === options.refresh) {//Refresh
+        input.setValue("");
+        a = input.getCaretPosition();
       }
     });
     ctrl = new RootView({
@@ -6953,8 +6963,9 @@ function debug(content) {
           }, []);
         }
       } else {
-        if (this.searchQuery.length) {
-          ajax("get", "https://www.youtube.com/results?&search_query=" + this.searchQuery, function (result, status) {
+        var search = encodeURIComponent(this.searchQuery.trim().replace(/ +/g, " "));
+        if (search.length) {
+          ajax("get", "https://www.youtube.com/results?&search_query=" + search, function (result, status) {
             debug('RELEASE - Router.prototype.getPage search_query (6862)');
             if (200 !== status) {
               return window.core.notify({
