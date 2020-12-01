@@ -6250,6 +6250,7 @@ function debug(content) {
       }
     });
     searchContactPanel.hide();
+    input.setValue("");
     if (!element.activeComponent) {
       if (x) {
         /** @type {string} */
@@ -6273,16 +6274,16 @@ function debug(content) {
   (function () {
     c = $(62);
     input.addListener("keydown", function (event) {
-      if (event.code === options.ok || event.code === options.info || event.code === options.playPause) {//OK || Info || PlayPause
+      if (event.code === options.ok || event.code === options.info || event.code === options.playPause) {
         ctrl.hide();
         searchContactPanel.show();
         notifyComment({
           value: input.value
         });
-      } else if (event.code === options.home || event.code === options.exit) {//Home || Exit
-          self.route(self.pages.main);
-          event.stop = true;
-      } else if (event.code === options.refresh) {//Refresh
+      } else if (event.code === options.home || event.code === options.exit) {
+        self.route(self.pages.main);
+        event.stop = true;
+      } else if (event.code === options.refresh) {
         input.setValue("");
         a = input.getCaretPosition();
       } else if (event.code === options.down) {
@@ -6335,16 +6336,16 @@ function debug(content) {
       }
     });
     c.addListener("keydown", function (event) {
-      if (event.code === options.menu || event.code === options.info || event.code === options.playPause) {//Menu || Info || PlayPause
+      if (event.code === options.menu || event.code === options.info || event.code === options.playPause) {
         ctrl.hide();
         searchContactPanel.show();
         notifyComment({
           value: input.value
         });
-      } else if (event.code === options.home || event.code === options.exit) {//Home || Exit
+      } else if (event.code === options.home || event.code === options.exit) {
         self.route(self.pages.main);
         event.stop = true;
-      } else if (event.code === options.refresh) {//Refresh
+      } else if (event.code === options.refresh) {
         input.setValue("");
         a = input.getCaretPosition();
       }
@@ -6965,7 +6966,7 @@ function debug(content) {
       } else {
         var search = encodeURIComponent(this.searchQuery.trim().replace(/ +/g, " "));
         if (search.length) {
-          ajax("get", "https://www.youtube.com/results?&search_query=" + search, function (result, status) {
+          ajax("get", "https://www.youtube.com/results?search_query=" + search, function (result, status) {
             debug('RELEASE - Router.prototype.getPage search_query (6862)');
             if (200 !== status) {
               return window.core.notify({
@@ -7124,8 +7125,12 @@ function debug(content) {
    */
   Router.prototype.filter = function (params) {
     /** @type {boolean} */
-    var t = false;
-    return void 0 !== params.searchQuery && this.searchQuery !== params.searchQuery && (t = true, this.searchQuery = params.searchQuery), !!t && (this.pages = {}, this.emit("content:changed", params), true);
+    this.searchQuery = params.searchQuery;
+    this.pages = {};
+    this.emit("content:changed", params);
+    return true;
+    //var t = false;
+    //return void 0 !== params.searchQuery && this.searchQuery !== params.searchQuery && (t = true, this.searchQuery = params.searchQuery), !!t && (this.pages = {}, this.emit("content:changed", params), true);
   };
   /** @type {function(!Object): undefined} */
   module.exports = Router;
