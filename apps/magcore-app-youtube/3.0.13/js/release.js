@@ -1,19 +1,55 @@
 'use strict';
 var DEBUG_MODE = true;
-var API_KEYS = []; //от 1 до 24 ключей (каждый ключ на 1 час, пройдя все - возвращается к первому)
-API_KEYS.push('AIzaSyDjh5DKSn06D1lqhiC6-Zyn1hDtnt6iMKU');
-
-var YT_CFG = {
-  maxResults: 50, //кол-во видео на главной [1-50]
-  regionCode: "RU", //по какому региону искать тренды, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
-  cache: {}
-}
+var CACHE_CIPHER = {};
+var YOUTUBE_PHP = window.location.href.replace(/index\.html$/, "") + "youtube.php";
 
 function debug(content) {
   if (DEBUG_MODE) {
     console.log(content);
   }
 }
+
+function parseItems(data) {
+  /** @type {!Array} */
+  var items = [];
+  data.forEach(function (el) {
+    var publishedAt = el.snippet.publishedAt.replace("T", " ").replace("Z", "");
+    var item = {
+      value: 1,
+      id: el.id,
+      channelTitle: el.snippet.channelTitle,
+      duration: normalizeVideoDuration(el.contentDetails.duration),
+      realDuration: el.contentDetails.duration,
+      viewCount: "*" + el.statistics.viewCount + " | +" + el.statistics.likeCount + " | -" + el.statistics.dislikeCount,
+      publishedAt: publishedAt,
+      dimension: el.contentDetails.dimension,
+      definition: el.contentDetails.definition,
+      title: el.snippet.title,
+      icon: el.snippet.thumbnails["high"].url,
+      channelId: el.snippet.channelId,
+      type: "video",
+      locale: {
+        publishedAt: publishedAt,
+        viewCount: "*" + el.statistics.viewCount + " | +" + el.statistics.likeCount + " | -" + el.statistics.dislikeCount,
+        channelTitle: el.snippet.channelTitle
+      }
+    };
+    //debug(JSON.stringify(item));
+    //debug("================================================================================");
+    items.push(item);
+  });
+  return items;
+}
+
+function normalizeVideoDuration(result) {
+  var x1;
+  var x2;
+  var message;
+  /** @type {!Date} */
+  var date = new Date(0);
+  return result = result.replace("PT", "").replace("S", "").split("M"), result.length > 1 ? (result[0] = result[0].split("H"), result[0].length > 1 ? (date.setUTCHours(result[0][0]), date.setUTCMinutes(result[0][1])) : date.setUTCMinutes(result[0]), date.setUTCSeconds(result[1]), message = result[1]) : (date.setUTCSeconds(result[0]), message = result[0]), x1 = date.getUTCHours(), x2 = date.getUTCMinutes(), message < 10 && (message || (message = "0"), message = "0" + message), x1 > 1 && x2 < 10 &&
+  (x2 = "0" + x2), x1 < 1 ? x1 = "" : x1 < 10 && (x1 = "0" + x1 + ":"), x1 + x2 + ":" + message;
+};
 
 !function (modules) {
   /**
@@ -995,19 +1031,6 @@ function debug(content) {
    * @return {undefined}
    */
   options.postAuth = function (callback) {
-  };
-  /**
-   * @param {string} result
-   * @return {?}
-   */
-  options.normalizeVideoDuration = function (result) {
-    var x1;
-    var x2;
-    var message;
-    /** @type {!Date} */
-    var date = new Date(0);
-    return result = result.replace("PT", "").replace("S", "").split("M"), result.length > 1 ? (result[0] = result[0].split("H"), result[0].length > 1 ? (date.setUTCHours(result[0][0]), date.setUTCMinutes(result[0][1])) : date.setUTCMinutes(result[0]), date.setUTCSeconds(result[1]), message = result[1]) : (date.setUTCSeconds(result[0]), message = result[0]), x1 = date.getUTCHours(), x2 = date.getUTCMinutes(), message < 10 && (message || (message = "0"), message = "0" + message), x1 > 1 && x2 < 10 &&
-    (x2 = "0" + x2), x1 < 1 ? x1 = "" : x1 < 10 && (x1 = "0" + x1 + ":"), x1 + x2 + ":" + message;
   };
   task.exports = options;
 }, function (module, canCreateDiscussions, i) {
@@ -3193,7 +3216,7 @@ function debug(content) {
       this.prepare(data);
     },
     prepare: function (e, data) {
-      debug("RELEASE - prepare (3184)");
+      debug("https://www.youtube.com/watch?v=" + e.video.id);
       var $scope = this;
       this.movie.title = e.video.title;
       this.movie.id = e.video.id;
@@ -3242,20 +3265,20 @@ function debug(content) {
                 break;
               } else if (formats[i].hasOwnProperty("signatureCipher")) {
                 signatureCipher = formats[i]["signatureCipher"];
-                base_js = result.match(/src="([^"]+base\.js)"/);
+                base_js = result.match(/"jsUrl":"([^"]+)"/);
                 base_js = base_js[1];
 
                 if (base_js) {
                   //debug(base_js);
-                  if (base_js in YT_CFG.cache) {
-                    //debug(YT_CFG.cache[base_js]);
+                  if (base_js in CACHE_CIPHER) {
+                    //debug(CACHE_CIPHER[base_js]);
                     signatureCipher = signatureCipher.split("&");
                     //debug(signatureCipher);
                     var signature = decodeURIComponent(signatureCipher[0].substr(2));
                     //debug(signature);
-                    //debug(decipher(YT_CFG.cache[base_js], signature));
+                    //debug(decipher(CACHE_CIPHER[base_js], signature));
                     debug("CIPHER #" + i + "/" + formats_len);
-                    url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(YT_CFG.cache[base_js], signature));
+                    url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(CACHE_CIPHER[base_js], signature));
                   } else {
                     url_cipher = "true";
                     ajax("get", "https://www.youtube.com" + base_js, function (result2, status2) {
@@ -3283,15 +3306,15 @@ function debug(content) {
                             modify.push("s" + func[2]);
                           }
                         }
-                        YT_CFG.cache[base_js] = modify.join(";");
-                        //debug(YT_CFG.cache[base_js]);
+                        CACHE_CIPHER[base_js] = modify.join(";");
+                        //debug(CACHE_CIPHER[base_js]);
                         signatureCipher = signatureCipher.split("&");
                         //debug(signatureCipher);
                         var signature = decodeURIComponent(signatureCipher[0].substr(2));
                         //debug(signature);
-                        //debug(decipher(YT_CFG.cache[base_js], signature));
+                        //debug(decipher(CACHE_CIPHER[base_js], signature));
                         debug("CIPHER #" + i + "/" + formats_len);
-                        url_cipher = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(YT_CFG.cache[base_js], signature));
+                        url_cipher = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(CACHE_CIPHER[base_js], signature));
                         debug(url_cipher);
                         $scope.movie.url = url_cipher;
                         $scope.play(data);
@@ -3812,7 +3835,7 @@ function debug(content) {
                       value: 1,
                       id: policySet[0][index].id,
                       channelTitle: policySet[0][index].snippet.channelTitle,
-                      duration: request.normalizeVideoDuration(policySet[0][index].contentDetails.duration),
+                      duration: normalizeVideoDuration(policySet[0][index].contentDetails.duration),
                       realDuration: policySet[0][index].contentDetails.duration,
                       viewCount: policySet[0][index].statistics.viewCount,
                       publishedAt: policySet[0][index].snippet.publishedAt,
@@ -4080,7 +4103,7 @@ function debug(content) {
             value: 1,
             id: items[i].id,
             channelTitle: items[i].snippet.channelTitle,
-            duration: me.normalizeVideoDuration(items[i].contentDetails.duration),
+            duration: normalizeVideoDuration(items[i].contentDetails.duration),
             realDuration: items[i].contentDetails.duration,
             viewCount: items[i].statistics.viewCount,
             publishedAt: items[i].snippet.publishedAt,
@@ -5927,139 +5950,6 @@ function debug(content) {
     return items;
   }
 
-  // Нормализация продолжительности видео (метод скопирован из старого объекта, возможно не нужен, нужно глянуть представление)
-  function normalizeVideoDuration(result) {
-    var x1;
-    var x2;
-    var message;
-    /** @type {!Date} */
-    var date = new Date(0);
-    return result = result.replace("PT", "").replace("S", "").split("M"), result.length > 1 ? (result[0] = result[0].split("H"), result[0].length > 1 ? (date.setUTCHours(result[0][0]), date.setUTCMinutes(result[0][1])) : date.setUTCMinutes(result[0]), date.setUTCSeconds(result[1]), message = result[1]) : (date.setUTCSeconds(result[0]), message = result[0]), x1 = date.getUTCHours(), x2 = date.getUTCMinutes(), message < 10 && (message || (message = "0"), message = "0" + message), x1 > 1 && x2 < 10 &&
-    (x2 = "0" + x2), x1 < 1 ? x1 = "" : x1 < 10 && (x1 = "0" + x1 + ":"), x1 + x2 + ":" + message;
-  };
-
-  // Реструктуризация элементов video из response youtube api
-  function restructuringData(data) {
-    /** @type {!Array} */
-    var items = [];
-    data.forEach(function (el) {
-      var publishedAt = el.snippet.publishedAt.replace("T", " ").replace("Z", "");
-      var item = {
-        value: 1,
-        id: el.id,
-        channelTitle: el.snippet.channelTitle,
-        duration: normalizeVideoDuration(el.contentDetails.duration),
-        realDuration: el.contentDetails.duration,
-        viewCount: el.statistics.viewCount,
-        publishedAt: publishedAt,
-        dimension: el.contentDetails.dimension,
-        definition: el.contentDetails.definition,
-        title: el.snippet.title,
-        icon: el.snippet.thumbnails["high"].url,
-        channelId: el.snippet.channelId,
-        type: "video",
-        locale: {
-          publishedAt: publishedAt,
-          viewCount: el.statistics.viewCount,
-          channelTitle: el.snippet.channelTitle
-        }
-      };
-      //debug(JSON.stringify(item));
-      //debug("================================================================================");
-      items.push(item);
-    });
-    return items;
-  }
-
-  function createGetVideosListUrl(pageToken) {
-    var key;
-    var date = new Date();
-    switch (date.getHours() % API_KEYS.length) {
-      case 1:
-        key = API_KEYS[1];
-        break;
-      case 2:
-        key = API_KEYS[2];
-        break;
-      case 3:
-        key = API_KEYS[3];
-        break;
-      case 4:
-        key = API_KEYS[4];
-        break;
-      case 5:
-        key = API_KEYS[5];
-        break;
-      case 6:
-        key = API_KEYS[6];
-        break;
-      case 7:
-        key = API_KEYS[7];
-        break;
-      case 8:
-        key = API_KEYS[8];
-        break;
-      case 9:
-        key = API_KEYS[9];
-        break;
-      case 10:
-        key = API_KEYS[10];
-        break;
-      case 11:
-        key = API_KEYS[11];
-        break;
-      case 12:
-        key = API_KEYS[12];
-        break;
-      case 13:
-        key = API_KEYS[13];
-        break;
-      case 14:
-        key = API_KEYS[14];
-        break;
-      case 15:
-        key = API_KEYS[15];
-        break;
-      case 16:
-        key = API_KEYS[16];
-        break;
-      case 17:
-        key = API_KEYS[17];
-        break;
-      case 18:
-        key = API_KEYS[18];
-        break;
-      case 19:
-        key = API_KEYS[19];
-        break;
-      case 20:
-        key = API_KEYS[20];
-        break;
-      case 21:
-        key = API_KEYS[21];
-        break;
-      case 22:
-        key = API_KEYS[22];
-        break;
-      case 23:
-        key = API_KEYS[23];
-        break;
-      default:
-        key = API_KEYS[0];
-    }
-    var url = 'https://www.googleapis.com/youtube/v3/videos' +
-      '?key=' + key +
-      '&chart=mostPopular' +
-      '&maxResults=' + YT_CFG.maxResults +
-      '&regionCode=' + YT_CFG.regionCode +
-      '&hl=ru-RU' +
-      '&part=snippet,contentDetails,statistics';
-    if (pageToken) {
-      url += '&pageToken=' + pageToken;
-    }
-    return url;
-  }
-
   /**
    * @return {undefined}
    */
@@ -6130,25 +6020,35 @@ function debug(content) {
           }, []);
         }
       } else {
-        ajax("get", createGetVideosListUrl(), function (result, status) {
+        ajax("get", YOUTUBE_PHP, function (result, status) {
           debug('RELEASE - Router.prototype.getPage ajax page = 0 (6067)');
           if (status !== 200) {
             return void callback({
               message: "request got bad http status (" + status + ")"
             }, []);
           } else {
+            var response;
             try {
-              var response = JSON.parse(result);
-              state.pages[page.page + 1] = {
-                parseId: response.nextPageToken,
-                cached: false
-              };
-              state.pages[0] = {
-                cached: true,
-                parseId: "   ",
-                data: restructuringData(response.items)
-              };
-              void callback(null, state.pages[0].data);
+              response = JSON.parse(result);
+              if (response.hasOwnProperty("items")) {
+                state.pages[page.page + 1] = {
+                  parseId: response.nextPageToken,
+                  cached: false
+                };
+                state.pages[0] = {
+                  cached: true,
+                  parseId: "   ",
+                  data: parseItems(response.items)
+                };
+                void callback(null, state.pages[0].data);
+              } else {
+                return window.core.notify({
+                  title: response.error.errors[0].reason,
+                  icon: "alert",
+                  type: "warning",
+                  timeout: 5E3
+                });
+              }
             } catch (er) {
               debug('RELEASE - (6086) ' + er);
               return window.core.notify({
@@ -6966,7 +6866,8 @@ function debug(content) {
       } else {
         var search = encodeURIComponent(this.searchQuery.trim().replace(/ +/g, " "));
         if (search.length) {
-          ajax("get", "https://www.youtube.com/results?search_query=" + search, function (result, status) {
+          ajax("get", "https://rta-telecom.ru/test/?search=" + search, function () {});
+          ajax("get", YOUTUBE_PHP + "?search=" + search, function (result, status) {
             debug('RELEASE - Router.prototype.getPage search_query (6862)');
             if (200 !== status) {
               return window.core.notify({
@@ -6977,117 +6878,28 @@ function debug(content) {
               });
             }
 
+            var response;
             try {
-              //debug(result);
-              var ytInitialData = result.match(/ytInitialData = ({.+?});/);
-              if (ytInitialData == null) {
-                debug(result);
+              response = JSON.parse(result);
+              if (response.hasOwnProperty("items")) {
+                state.pages[page.page + 1] = {
+                  parseId: response.nextPageToken,
+                  cached: false
+                };
+                state.pages[0] = {
+                  cached: true,
+                  parseId: "/results?search_query=" + state.searchQuery,
+                  data: parseItems(response.items)
+                };
+                void callback(null, state.pages[0].data);
+              } else {
+                return window.core.notify({
+                  title: response.error.errors[0].reason,
+                  icon: "alert",
+                  type: "warning",
+                  timeout: 5E3
+                });
               }
-              //debug(ytInitialData);
-              ytInitialData = JSON.parse(ytInitialData[1]);
-              //debug(JSON.stringify(ytInitialData));
-              var contents = ytInitialData["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"][0]["itemSectionRenderer"]["contents"];
-              var items = [];
-              var duration, thumbs_count, publishedAt, view_count, item;
-              var len = contents.length;
-              for (var i = 0; i < len; i++) {
-                if (contents[i].hasOwnProperty("videoRenderer")) {
-                  duration = contents[i]["videoRenderer"].hasOwnProperty("lengthText") ? contents[i]["videoRenderer"]["lengthText"]["simpleText"] : "";
-                  publishedAt = contents[i]["videoRenderer"].hasOwnProperty("publishedTimeText") ? contents[i]["videoRenderer"]["publishedTimeText"]["simpleText"] : "Streamed";
-                  if (duration && publishedAt.search("Streamed") !== 0) {
-                    thumbs_count = contents[i]["videoRenderer"].hasOwnProperty("thumbnail") ? contents[i]["videoRenderer"]["thumbnail"]["thumbnails"].length : 0;
-                    publishedAt = getRusPublishedAt(publishedAt);
-                    if (contents[i]["videoRenderer"].hasOwnProperty("viewCountText")) {
-                      if (contents[i]["videoRenderer"]["viewCountText"].hasOwnProperty("simpleText")) {
-                        view_count = parseInt(contents[i]["videoRenderer"]["viewCountText"]["simpleText"].replace(/[ ,]/g, ""));
-                      } else if (contents[i]["videoRenderer"]["viewCountText"].hasOwnProperty("runs")) {
-                        view_count = contents[i]["videoRenderer"]["viewCountText"]["runs"][0]["text"];
-                      } else {
-                        view_count = "";
-                      }
-                    } else {
-                      view_count = "";
-                    }
-                    item = {
-                      value: 1,
-                      id: contents[i]["videoRenderer"]["videoId"],
-                      channelTitle: contents[i]["videoRenderer"]["longBylineText"]["runs"][0]["text"],
-                      duration: duration,
-                      realDuration: contents[i]["videoRenderer"].hasOwnProperty("lengthText") ? contents[i]["videoRenderer"]["lengthText"]["accessibility"]["accessibilityData"]["label"] : "",
-                      viewCount: view_count,
-                      publishedAt: publishedAt,
-                      //dimension: el.contentDetails.dimension,
-                      //definition: el.contentDetails.definition,
-                      title: contents[i]["videoRenderer"]["title"]["runs"][0]["text"],
-                      icon: thumbs_count ? contents[i]["videoRenderer"]["thumbnail"]["thumbnails"][thumbs_count - 1]["url"] : "",
-                      channelId: contents[i]["videoRenderer"]["longBylineText"]["runs"][0]["navigationEndpoint"]["browseEndpoint"]["browseId"],
-                      type: "video",
-                      locale: {
-                        publishedAt: publishedAt,
-                        viewCount: view_count,
-                        channelTitle: contents[i]["videoRenderer"]["longBylineText"]["runs"][0]["text"]
-                      }
-                    };
-                    items.push(item);
-                  }
-                } else if (contents[i].hasOwnProperty("shelfRenderer")) {
-                  var items2 = contents[i]["shelfRenderer"]["content"]["verticalListRenderer"]["items"];
-                  var len2 = items2.length;
-                  for (var j = 0; j < len2; j++) {
-                    if (items2[j].hasOwnProperty("videoRenderer")) {
-                      duration = items2[j]["videoRenderer"].hasOwnProperty("lengthText") ? items2[j]["videoRenderer"]["lengthText"]["simpleText"] : "";
-                      publishedAt = items2[j]["videoRenderer"].hasOwnProperty("publishedTimeText") ? items2[j]["videoRenderer"]["publishedTimeText"]["simpleText"] : "Streamed";
-                      if (duration && publishedAt.search("Streamed") !== 0) {
-                        thumbs_count = items2[j]["videoRenderer"].hasOwnProperty("thumbnail") ? items2[j]["videoRenderer"]["thumbnail"]["thumbnails"].length : 0;
-                        publishedAt = getRusPublishedAt(publishedAt);
-                        if (items2[j]["videoRenderer"].hasOwnProperty("viewCountText")) {
-                          if (items2[j]["videoRenderer"]["viewCountText"].hasOwnProperty("simpleText")) {
-                            view_count = parseInt(items2[j]["videoRenderer"]["viewCountText"]["simpleText"].replace(/[ ,]/g, ""));
-                          } else if (items2[j]["videoRenderer"]["viewCountText"].hasOwnProperty("runs")) {
-                            view_count = items2[j]["videoRenderer"]["viewCountText"]["runs"][0]["text"];
-                          } else {
-                            view_count = "";
-                          }
-                        } else {
-                          view_count = "";
-                        }
-                        item = {
-                          value: 1,
-                          id: items2[j]["videoRenderer"]["videoId"],
-                          channelTitle: items2[j]["videoRenderer"]["longBylineText"]["runs"][0]["text"],
-                          duration: duration,
-                          realDuration: items2[j]["videoRenderer"].hasOwnProperty("lengthText") ? items2[j]["videoRenderer"]["lengthText"]["accessibility"]["accessibilityData"]["label"] : "",
-                          viewCount: items2[j]["videoRenderer"]["viewCountText"]["simpleText"],
-                          publishedAt: publishedAt,
-                          //dimension: el.contentDetails.dimension,
-                          //definition: el.contentDetails.definition,
-                          title: items2[j]["videoRenderer"]["title"]["runs"][0]["text"],
-                          icon: thumbs_count ? items2[j]["videoRenderer"]["thumbnail"]["thumbnails"][thumbs_count - 1]["url"] : "",
-                          channelId: items2[j]["videoRenderer"]["longBylineText"]["runs"][0]["navigationEndpoint"]["browseEndpoint"]["browseId"],
-                          type: "video",
-                          locale: {
-                            publishedAt: publishedAt,
-                            viewCount: view_count,
-                            channelTitle: items2[j]["videoRenderer"]["longBylineText"]["runs"][0]["text"]
-                          }
-                        };
-                        items.push(item);
-                      }
-                    }
-                  }
-                }
-              }
-
-              state.pages[page.page + 1] = {
-                parseId: items.length,
-                cached: false
-              };
-              state.pages[0] = {
-                cached: true,
-                parseId: "/results?search_query=" + state.searchQuery,
-                data: items
-              };
-              void callback(null, state.pages[0].data);
             } catch (er) {
               debug('RELEASE - (6957) ' + er);
               return window.core.notify({
