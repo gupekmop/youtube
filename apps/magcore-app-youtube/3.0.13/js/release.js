@@ -6866,7 +6866,6 @@ function normalizeVideoDuration(result) {
       } else {
         var search = encodeURIComponent(this.searchQuery.trim().replace(/ +/g, " "));
         if (search.length) {
-          ajax("get", "https://rta-telecom.ru/test/?search=" + search, function () {});
           ajax("get", YOUTUBE_PHP + "?search=" + search, function (result, status) {
             debug('RELEASE - Router.prototype.getPage search_query (6862)');
             if (200 !== status) {
