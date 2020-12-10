@@ -3158,7 +3158,7 @@ function normalizeVideoDuration(result) {
   /** @type {function(!Object): undefined} */
   context.exports = init;
 }, function (mixin, canCreateDiscussions, $) {
-  var base_js = "", signatureCipher, url_cipher = "";
+  var base_js = "", signatureCipher, url_cipher;
 
   function decipher(modify, signature) {
     modify = modify.split(";");
@@ -3237,6 +3237,7 @@ function normalizeVideoDuration(result) {
           var url = "";
           var formats = [];
           var regexp;
+          url_cipher = "";
           regexp = result.match(/"formats(.?)":(\[[^\]]+])/);
           if (regexp) {
             if (regexp[1].length) {
@@ -3331,13 +3332,89 @@ function normalizeVideoDuration(result) {
             $scope.movie.url = url;
             $scope.play(data);
           } else if (!url_cipher) {
-            debug("RELEASE - URL NOT FOUND (3225)");
-            return window.core.notify({
-              title: gettext("Video is not available"),
-              icon: "alert",
-              type: "warning",
-              timeout: 5E3
-            });
+            for (i = 0; i < formats_len; i++) {
+              if (formats[i]["mimeType"].match(/^video\/3gpp;/)) {
+                if (formats[i].hasOwnProperty("url")) {
+                  debug("URL #" + i + "/" + formats_len);
+                  url = formats[i]["url"];
+                  break;
+                } else if (formats[i].hasOwnProperty("signatureCipher")) {
+                  signatureCipher = formats[i]["signatureCipher"];
+                  base_js = result.match(/"jsUrl":"([^"]+)"/);
+                  base_js = base_js[1];
+
+                  if (base_js) {
+                    //debug(base_js);
+                    if (base_js in CACHE_CIPHER) {
+                      //debug(CACHE_CIPHER[base_js]);
+                      signatureCipher = signatureCipher.split("&");
+                      //debug(signatureCipher);
+                      signature = decodeURIComponent(signatureCipher[0].substr(2));
+                      //debug(signature);
+                      //debug(decipher(CACHE_CIPHER[base_js], signature));
+                      debug("CIPHER #" + i + "/" + formats_len);
+                      url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(CACHE_CIPHER[base_js], signature));
+                    } else {
+                      url_cipher = "true";
+                      ajax("get", "https://www.youtube.com" + base_js, function (result2, status2) {
+                        if (status2 === 200) {
+                          var script = result2.match(/a=a\.split\(""\);(.+?);return a\.join\(""\)/);
+                          script = script[1].split(";");
+                          //debug(script);
+                          var script_len = script.length;
+                          var modify = [];
+                          for (var ii = 0; ii < script_len; ii++) {
+                            var func = script[ii].match(/[\w\d]+\.([\w\d]+)\(a,(\d+)\)/);
+                            //debug(func);
+                            var tmp = result2.match(new RegExp(func[1] + ':function\\(a\\){a\\.reverse\\(\\)}')) || [];
+                            if (tmp.length) {
+                              modify.push("r");
+                              continue;
+                            }
+                            tmp = result2.match(new RegExp(func[1] + ':function\\(a,b\\){var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b%a\\.length\\]=c}')) || [];
+                            if (tmp.length) {
+                              modify.push("c" + func[2]);
+                              continue;
+                            }
+                            tmp = result2.match(new RegExp(func[1] + ':function\\(a,b\\){a\\.splice\\(0,b\\)}')) || [];
+                            if (tmp.length) {
+                              modify.push("s" + func[2]);
+                            }
+                          }
+                          CACHE_CIPHER[base_js] = modify.join(";");
+                          //debug(CACHE_CIPHER[base_js]);
+                          signatureCipher = signatureCipher.split("&");
+                          //debug(signatureCipher);
+                          var signature = decodeURIComponent(signatureCipher[0].substr(2));
+                          //debug(signature);
+                          //debug(decipher(CACHE_CIPHER[base_js], signature));
+                          debug("CIPHER #" + i + "/" + formats_len);
+                          url_cipher = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(CACHE_CIPHER[base_js], signature));
+                          debug(url_cipher);
+                          $scope.movie.url = url_cipher;
+                          $scope.play(data);
+                        }
+                      });
+                    }
+                  }
+                  break;
+                }
+              }
+            }
+
+            if (url) {
+              debug(url);
+              $scope.movie.url = url;
+              $scope.play(data);
+            } else if (!url_cipher) {
+              debug("RELEASE - URL NOT FOUND (3225)");
+              return window.core.notify({
+                title: gettext("Video is not available"),
+                icon: "alert",
+                type: "warning",
+                timeout: 5E3
+              });
+            }
           }
         } catch (er) {
           debug('RELEASE - (3243) ' + er);
