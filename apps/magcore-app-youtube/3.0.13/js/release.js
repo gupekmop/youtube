@@ -18,19 +18,19 @@ function parseItems(data) {
       value: 1,
       id: el.id,
       channelTitle: el.snippet.channelTitle,
-      duration: normalizeVideoDuration(el.contentDetails.duration),
+      duration: el.contentDetails.hasOwnProperty("realDuration") ? el.contentDetails.duration : normalizeVideoDuration(el.contentDetails.duration),
       realDuration: el.contentDetails.duration,
-      viewCount: "*" + el.statistics.viewCount + " | +" + el.statistics.likeCount + " | -" + el.statistics.dislikeCount,
+      viewCount: el.statistics.viewCount + (el.statistics.likeCount ? " | +" + el.statistics.likeCount : "") + (el.statistics.dislikeCount ? " | -" + el.statistics.dislikeCount : ""),
       publishedAt: publishedAt,
       dimension: el.contentDetails.dimension,
       definition: el.contentDetails.definition,
       title: el.snippet.title,
-      icon: el.snippet.thumbnails["high"].url,
+      icon: el.snippet.thumbnails.hasOwnProperty("high") ? el.snippet.thumbnails["high"].url : el.snippet.thumbnails[el.snippet.thumbnails.length - 1].url,
       channelId: el.snippet.channelId,
       type: "video",
       locale: {
         publishedAt: publishedAt,
-        viewCount: "*" + el.statistics.viewCount + " | +" + el.statistics.likeCount + " | -" + el.statistics.dislikeCount,
+        viewCount: el.statistics.viewCount + (el.statistics.likeCount ? " | +" + el.statistics.likeCount : "") + (el.statistics.dislikeCount ? " | -" + el.statistics.dislikeCount : ""),
         channelTitle: el.snippet.channelTitle
       }
     };
@@ -6107,7 +6107,7 @@ function normalizeVideoDuration(result) {
             var response;
             try {
               response = JSON.parse(result);
-              if (response.hasOwnProperty("items")) {
+              if (response.hasOwnProperty("items") && response.items.length) {
                 state.pages[page.page + 1] = {
                   parseId: response.nextPageToken,
                   cached: false
@@ -6120,7 +6120,7 @@ function normalizeVideoDuration(result) {
                 void callback(null, state.pages[0].data);
               } else {
                 return window.core.notify({
-                  title: response.error.errors[0].reason,
+                  title: "-",
                   icon: "alert",
                   type: "warning",
                   timeout: 5E3
@@ -6864,23 +6864,6 @@ function normalizeVideoDuration(result) {
     return items;
   }
 
-  function getRusPublishedAt(publishedAt) {
-    if (publishedAt) {
-      var digit = parseInt(publishedAt);
-      var digit_last = digit % 10;
-      publishedAt = publishedAt.replace("ago", "назад");
-      publishedAt = publishedAt.replace("Streamed", "Трансляция");
-      publishedAt = publishedAt.replace(/seconds?/, "с.");
-      publishedAt = publishedAt.replace(/minutes?/, "мин.");
-      publishedAt = publishedAt.replace(/hours?/, "ч.");
-      publishedAt = publishedAt.replace(/days?/, "д.");
-      publishedAt = publishedAt.replace(/weeks?/, "н.");
-      publishedAt = publishedAt.replace(/months?/, "мес.");
-      publishedAt = publishedAt.replace(/years?/, ((digit_last === 1 || digit_last === 2 || digit_last === 3 || digit_last === 4) && !(10 < digit && digit < 15)) ? "г." : "л.");
-    }
-    return publishedAt;
-  }
-
   /**
    * @param {!Object} name
    * @return {undefined}
@@ -6957,7 +6940,7 @@ function normalizeVideoDuration(result) {
             var response;
             try {
               response = JSON.parse(result);
-              if (response.hasOwnProperty("items")) {
+              if (response.hasOwnProperty("items") && response.items.length) {
                 state.pages[page.page + 1] = {
                   parseId: response.nextPageToken,
                   cached: false
@@ -6970,7 +6953,7 @@ function normalizeVideoDuration(result) {
                 void callback(null, state.pages[0].data);
               } else {
                 return window.core.notify({
-                  title: response.error.errors[0].reason,
+                  title: "-",
                   icon: "alert",
                   type: "warning",
                   timeout: 5E3
