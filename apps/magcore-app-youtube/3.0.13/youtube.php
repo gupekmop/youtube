@@ -83,86 +83,134 @@ if (isset($_GET["search"])) {
         }
     } else {
         //=========================================== PARSING =============================================
+        //=========================================== CHANNEL =============================================
+        if (preg_match("/^(?:\/user\/|\/channel\/)/", $_GET["search"])) {
+            $html = file_get_contents("https://www.youtube.com" . $_GET["search"] . "/videos");
 
-        function parseVideoRenderer($videoRenderer)
-        {
-            $duration = isset($videoRenderer["lengthText"]["simpleText"]) ? $videoRenderer["lengthText"]["simpleText"] : "";
+            if (preg_match_all('/"gridVideoRenderer":{"videoId":"([^"]+)"/', $html, $videoId)) {
+                unset($html);
 
-            if ($duration) {
-                $publishedAt = isset($videoRenderer["publishedTimeText"]["simpleText"]) ? $videoRenderer["publishedTimeText"]["simpleText"] : "";
-                $viewCount = "";
+                $url = "https://www.googleapis.com/youtube/v3/videos" .
+                    "?key=" . $KEYS_INDEX[intval(date("G")) % count($KEYS_INDEX)] .
+                    "&id=" . implode(",", $videoId[1]) .
+                    "&hl=" . $CFG["index"]["hl"] .
+                    "&part=snippet,contentDetails,statistics";
+                echo youtube($url);
+            } else {
+                echo json_encode([]);
+            }
+        } else {
+            //=========================================== SEARCH =============================================
+            function parseVideoRenderer($videoRenderer)
+            {
+                $duration = isset($videoRenderer["lengthText"]["simpleText"]) ? $videoRenderer["lengthText"]["simpleText"] : "";
 
-                if (isset($videoRenderer["viewCountText"]["simpleText"])) {
-                    $viewCount = $videoRenderer["viewCountText"]["simpleText"];
-                } else if (isset($videoRenderer["viewCountText"]["runs"][0]["text"])) {
-                    $viewCount = $videoRenderer["viewCountText"]["runs"][0]["text"];
+                if ($duration) {
+                    $publishedAt = isset($videoRenderer["publishedTimeText"]["simpleText"]) ? $videoRenderer["publishedTimeText"]["simpleText"] : "";
+                    $viewCount = "";
+
+                    if (isset($videoRenderer["viewCountText"]["simpleText"])) {
+                        $viewCount = $videoRenderer["viewCountText"]["simpleText"];
+                    } else if (isset($videoRenderer["viewCountText"]["runs"][0]["text"])) {
+                        $viewCount = $videoRenderer["viewCountText"]["runs"][0]["text"];
+                    }
+
+                    return [
+                        "id" => $videoRenderer["videoId"],
+                        "snippet" => [
+                            "publishedAt" => $publishedAt,
+                            "channelId" => $videoRenderer["longBylineText"]["runs"][0]["navigationEndpoint"]["browseEndpoint"]["browseId"],
+                            "title" => $videoRenderer["title"]["runs"][0]["text"],
+                            "channelTitle" => $videoRenderer["longBylineText"]["runs"][0]["text"],
+                            "thumbnails" => $videoRenderer["thumbnail"]["thumbnails"],
+                        ],
+                        "contentDetails" => [
+                            "duration" => $duration,
+                            "realDuration" => "",
+                            "dimension" => "",
+                            "definition" => "",
+                        ],
+                        "statistics" => [
+                            "viewCount" => $viewCount,
+                            "likeCount" => "",
+                            "dislikeCount" => "",
+                        ],
+                    ];
                 }
 
+                return false;
+            }
+
+            function parseChannelRenderer($channelRenderer)
+            {
                 return [
-                    "id" => $videoRenderer["videoId"],
+                    "id" => "",
+                    "canonicalBaseUrl" => $channelRenderer["longBylineText"]["runs"][0]["navigationEndpoint"]["browseEndpoint"]["canonicalBaseUrl"],
                     "snippet" => [
-                        "publishedAt" => $publishedAt,
-                        "channelId" => $videoRenderer["longBylineText"]["runs"][0]["navigationEndpoint"]["browseEndpoint"]["browseId"],
-                        "title" => $videoRenderer["title"]["runs"][0]["text"],
-                        "channelTitle" => $videoRenderer["longBylineText"]["runs"][0]["text"],
-                        "thumbnails" => $videoRenderer["thumbnail"]["thumbnails"],
+                        "publishedAt" => "",
+                        "channelId" => $channelRenderer["channelId"],
+                        "title" => $channelRenderer["title"]["simpleText"],
+                        "channelTitle" => $channelRenderer["subscriberCountText"]["simpleText"], //subscribers count
+                        "thumbnails" => $channelRenderer["thumbnail"]["thumbnails"],
                     ],
                     "contentDetails" => [
-                        "duration" => $duration,
+                        "duration" => "",
                         "realDuration" => "",
                         "dimension" => "",
                         "definition" => "",
                     ],
                     "statistics" => [
-                        "viewCount" => $viewCount,
+                        "viewCount" => $channelRenderer["videoCountText"]["runs"][0]["text"] . $channelRenderer["videoCountText"]["runs"][1]["text"], //video count
                         "likeCount" => "",
                         "dislikeCount" => "",
                     ],
                 ];
             }
 
-            return false;
-        }
+            $html = file_get_contents("https://www.youtube.com/results?search_query=" . rawurlencode($_GET["search"]));
+            $json = [];
 
-        $html = file_get_contents("https://www.youtube.com/results?search_query=" . rawurlencode($_GET["search"]));
-        $json = [];
+            if ($html !== false && preg_match("/ytInitialData = ({.+});/", $html, $ytInitialData)) {
+                unset($html);
+                $ytInitialData = json_decode($ytInitialData[1], true);
+                $contents = $ytInitialData["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
+                unset($ytInitialData);
 
-        if ($html !== false && preg_match("/ytInitialData = ({.+});/", $html, $ytInitialData)) {
-            unset($html);
-            $ytInitialData = json_decode($ytInitialData[1], true);
-            $contents = $ytInitialData["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];
-            unset($ytInitialData);
-
-            foreach ($contents as $content) {
-                if (isset($content["itemSectionRenderer"]["contents"])) {
-                    foreach ($content["itemSectionRenderer"]["contents"] as $video) {
-                        if (isset($video["videoRenderer"])) {
-                            if (($item = parseVideoRenderer($video["videoRenderer"])) !== false) {
-                                $json["items"][] = $item;
-                            }
-                        } else if (isset($video["shelfRenderer"]["content"]["verticalListRenderer"]["items"])) {
-                            foreach ($video["shelfRenderer"]["content"]["verticalListRenderer"]["items"] as $shelf) {
-                                if (isset($shelf["videoRenderer"])) {
-                                    if (($item = parseVideoRenderer($shelf["videoRenderer"])) !== false) {
-                                        $json["items"][] = $item;
+                foreach ($contents as $content) {
+                    if (isset($content["itemSectionRenderer"]["contents"])) {
+                        foreach ($content["itemSectionRenderer"]["contents"] as $video) {
+                            if (isset($video["videoRenderer"])) {
+                                if (($item = parseVideoRenderer($video["videoRenderer"])) !== false) {
+                                    $json["items"][] = $item;
+                                }
+                            } else if (isset($video["channelRenderer"])) {
+                                if (($item = parseChannelRenderer($video["channelRenderer"])) !== false) {
+                                    $json["items"][] = $item;
+                                }
+                            } else if (isset($video["shelfRenderer"]["content"]["verticalListRenderer"]["items"])) {
+                                foreach ($video["shelfRenderer"]["content"]["verticalListRenderer"]["items"] as $shelf) {
+                                    if (isset($shelf["videoRenderer"])) {
+                                        if (($item = parseVideoRenderer($shelf["videoRenderer"])) !== false) {
+                                            $json["items"][] = $item;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+
+                //echo "<pre>";
+                //echo $json);
+                //echo "</pre>";
+
+                //echo "<pre>";
+                //print_r($contents);
+                //echo "</pre>";
             }
 
-            //echo "<pre>";
-            //echo $json);
-            //echo "</pre>";
-
-            //echo "<pre>";
-            //print_r($contents);
-            //echo "</pre>";
+            echo json_encode($json, JSON_UNESCAPED_UNICODE);
         }
-
-        echo json_encode($json, JSON_UNESCAPED_UNICODE);
     }
 } else {
     $url = "https://www.googleapis.com/youtube/v3/videos" .

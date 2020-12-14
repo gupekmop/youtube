@@ -17,6 +17,7 @@ function parseItems(data) {
     var item = {
       value: 1,
       id: el.id,
+      canonicalBaseUrl: el.hasOwnProperty("canonicalBaseUrl") ? el.canonicalBaseUrl : "",
       channelTitle: el.snippet.channelTitle,
       duration: el.contentDetails.hasOwnProperty("realDuration") ? el.contentDetails.duration : normalizeVideoDuration(el.contentDetails.duration),
       realDuration: el.contentDetails.duration,
@@ -6371,11 +6372,19 @@ function normalizeVideoDuration(result) {
         },
         "click:item": function (context) {
           if ("video" === context.$item.data.type) {
-            n.setContent({
-              video: context.$item.data,
-              playlist: this.data,
-              position: context.$item.index
-            });
+            if (context.$item.data.id) {
+              n.setContent({
+                video: context.$item.data,
+                playlist: this.data,
+                position: context.$item.index
+              });
+            } else if (context.$item.data.canonicalBaseUrl) {
+              ctrl.hide();
+              searchContactPanel.show();
+              notifyComment({
+                value: context.$item.data.canonicalBaseUrl
+              });
+            }
           } else {
             if ("playlist" === context.$item.data.type) {
               that.getPage({
@@ -6390,9 +6399,9 @@ function normalizeVideoDuration(result) {
               });
             } else {
               if ("channel" === context.$item.data.type) {
-                self.route(self.pages.main, {
+                /*self.route(self.pages.main, {
                   channel: context.$item.data
-                });
+                });*/
               }
             }
           }
@@ -6968,23 +6977,6 @@ function normalizeVideoDuration(result) {
                 timeout: 5E3
               });
             }
-            /*
-            var tokens;
-            var j;
-            var i;
-            var resizewidth;
-            return 200 !== status ? void callback({
-              message: "request got bad http status (" + status + ")"
-            }, []) : (j = result.indexOf('class="branded-page-box search-pager'), i = result.indexOf('class="branded-page-v2-secondary-col', j), tokens = result.substring(j, i), tokens = tokens.split('<a href="'), tokens[tokens.length - 1] && tokens[tokens.length - 1].indexOf("\u00bb") !== -1 ? (j = tokens[tokens.length - 1].indexOf('href="/results?') + 6, i = tokens[tokens.length - 1].indexOf('"', j), resizewidth = tokens[tokens.length - 1].substring(j, i).replace("&amp;", "&")) : resizewidth = "", state.pages[page.page +
-            1] = {
-              parseId: resizewidth,
-              cached: false
-            }, tokens = result.slice(result.indexOf('id="item-section-'), result.indexOf('class="branded-page-box search-pager')), state.pages[0] = {
-              cached: true,
-              parseId: "/results?search_query=" + state.searchQuery,
-              data: parse(tokens)
-            }, void callback(null, state.pages[0].data));
-            */
           });
         }
       }
