@@ -43,14 +43,19 @@ function parseItems(data) {
 }
 
 function normalizeVideoDuration(result) {
-  var x1;
-  var x2;
-  var message;
-  /** @type {!Date} */
-  var date = new Date(0);
-  return result = result.replace("PT", "").replace("S", "").split("M"), result.length > 1 ? (result[0] = result[0].split("H"), result[0].length > 1 ? (date.setUTCHours(result[0][0]), date.setUTCMinutes(result[0][1])) : date.setUTCMinutes(result[0]), date.setUTCSeconds(result[1]), message = result[1]) : (date.setUTCSeconds(result[0]), message = result[0]), x1 = date.getUTCHours(), x2 = date.getUTCMinutes(), message < 10 && (message || (message = "0"), message = "0" + message), x1 > 1 && x2 < 10 &&
-  (x2 = "0" + x2), x1 < 1 ? x1 = "" : x1 < 10 && (x1 = "0" + x1 + ":"), x1 + x2 + ":" + message;
-};
+  var match = result.match(/PT(?:(\d{1,2})D)?(?:(\d{1,2})H)?(?:(\d{1,2})M)?(?:(\d{1,2})S)?/);
+  if (match) {
+    var
+      d = match[1] || 0,
+      h = match[2] || 0,
+      m = match[3] || 0,
+      s = match[4] || 0;
+
+    result = (d ? d + ":" : "") + ((d || h) ? (h > 9 ? h : (d ? "0" + h : h)) + ":" : "") + ((d || h) ? (m > 9 ? m : "0" + m) : m) + ":" + (s > 9 ? s : "0" + s);
+  }
+
+  return result;
+}
 
 !function (modules) {
   /**
