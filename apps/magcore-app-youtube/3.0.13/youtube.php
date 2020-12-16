@@ -1,5 +1,8 @@
 <?php
+define("API_KEY", "AIzaSyDjh5DKSn06D1lqhiC6-Zyn1hDtnt6iMKU"); //ключ Youtube Data API
 define("API_SEARCH", false); //true - для поиска через API
+define("SEARCH_LOGS", false); //true - логировать поисковые запросы в папку logs
+
 $CFG = [
     "index" => [
         "maxResults" => 50, //кол-во видео на главной [1-50]
@@ -11,14 +14,6 @@ $CFG = [
         "regionCode" => "RU", //по какому региону поиск, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
         "hl" => "ru-RU",
     ],
-];
-
-$KEYS_INDEX = [ //ключ для трендов
-    "AIzaSyDjh5DKSn06D1lqhiC6-Zyn1hDtnt6iMKU",
-];
-
-$KEYS_SEARCH = [ //ключ для поиска
-    "AIzaSyDjh5DKSn06D1lqhiC6-Zyn1hDtnt6iMKU",
 ];
 
 function youtube($url)
@@ -37,17 +32,17 @@ function youtube($url)
 header("Content-type: application/json; charset=utf-8");
 
 if (isset($_GET["search"])) {
+    if (defined("SEARCH_LOGS") && SEARCH_LOGS === true) {
+        $file = fopen("logs/" . date("Ymd") . ".log", "a");
+        fwrite($file, date("H:i:s") . " - " . $_SERVER["REMOTE_ADDR"] . " - " . rawurldecode($_GET["search"]) . "\n");
+        fclose($file);
+    }
     if (defined("API_SEARCH") && API_SEARCH === true) {
         //=========================================== API =============================================
 
-        $index = intval(file_get_contents("youtube.key"));
-        if (++$index >= count($KEYS_SEARCH)) {
-            $index = 0;
-        }
-        file_put_contents("youtube.key", $index);
 
         $url = "https://www.googleapis.com/youtube/v3/search" .
-            "?key=" . $KEYS_SEARCH[$index] .
+            "?key=" . API_KEY .
             "&part=snippet" .
             "&maxResults=" . $CFG["search"]["maxResults"] .
             "&order=relevance" .
@@ -72,7 +67,7 @@ if (isset($_GET["search"])) {
             unset($arr);
 
             $url = "https://www.googleapis.com/youtube/v3/videos" .
-                "?key=" . $KEYS_SEARCH[$index] .
+                "?key=" . API_KEY .
                 "&id=" . implode(",", $ids) .
                 "&hl=" . $CFG["search"]["hl"] .
                 "&part=snippet,contentDetails,statistics";
@@ -91,7 +86,7 @@ if (isset($_GET["search"])) {
                 unset($html);
 
                 $url = "https://www.googleapis.com/youtube/v3/videos" .
-                    "?key=" . $KEYS_INDEX[intval(date("G")) % count($KEYS_INDEX)] .
+                    "?key=" . API_KEY .
                     "&id=" . implode(",", $videoId[1]) .
                     "&hl=" . $CFG["index"]["hl"] .
                     "&part=snippet,contentDetails,statistics";
@@ -184,9 +179,7 @@ if (isset($_GET["search"])) {
                                     $json["items"][] = $item;
                                 }
                             } else if (isset($video["channelRenderer"])) {
-                                if (($item = parseChannelRenderer($video["channelRenderer"])) !== false) {
-                                    $json["items"][] = $item;
-                                }
+                                $json["items"][] = parseChannelRenderer($video["channelRenderer"]);
                             } else if (isset($video["shelfRenderer"]["content"]["verticalListRenderer"]["items"])) {
                                 foreach ($video["shelfRenderer"]["content"]["verticalListRenderer"]["items"] as $shelf) {
                                     if (isset($shelf["videoRenderer"])) {
@@ -201,7 +194,7 @@ if (isset($_GET["search"])) {
                 }
 
                 //echo "<pre>";
-                //echo $json);
+                //print_r($json);
                 //echo "</pre>";
 
                 //echo "<pre>";
@@ -212,9 +205,119 @@ if (isset($_GET["search"])) {
             echo json_encode($json, JSON_UNESCAPED_UNICODE);
         }
     }
+} else if (isset($_GET["v"])) {
+    function decipher($arr, $a)
+    {
+        $a = str_split($a);
+
+        foreach ($arr as $do) {
+            if ($do === "r") {
+                $a = array_reverse($a);
+            } else if ($do[0] === "c") {
+                $do = intval(substr($do, 1));
+                $c = $a[0];
+                $a[0] = $a[$do % count($a)];
+                $a[$do % count($a)] = $c;
+            } else if ($do[0] === "s") {
+                $do = intval(substr($do, 1));
+                array_splice($a, 0, $do);
+            }
+        }
+
+        return implode("", $a);
+    }
+
+    function getBase($script)
+    {
+        $res = [];
+        $script = file_get_contents($script);
+        if (preg_match('/a=a\.split\(""\);(.+?);return a\.join\(""\)/', $script, $functions)) {
+            $functions = explode(";", $functions[1]);
+
+            foreach ($functions as $function) {
+                if (preg_match('/[\w\d]+\.([\w\d]+)\(a,(\d+)\)/', $function, $func)) {
+                    if (preg_match('/' . $func[1] . ':function\(a\){a\.reverse\(\)}/', $script)) {
+                        $res[] = "r";
+                    } else if (preg_match('/' . $func[1] . ':function\(a,b\){var c=a\[0];a\[0]=a\[b%a\.length];a\[b%a\.length]=c}/', $script)) {
+                        $res[] = "c" . $func[2];
+                    } else if (preg_match('/' . $func[1] . ':function\(a,b\){a\.splice\(0,b\)}/', $script)) {
+                        $res[] = "s" . $func[2];
+                    } else {
+                        $res[] = "u:" . $func[0];
+                    }
+                }
+            }
+        }
+        return $res;
+    }
+
+    $html = file_get_contents("https://www.youtube.com/watch?v=" . $_GET["v"]);
+
+    $formats = [];
+    if (preg_match('/"formats(.?)":(\[[^]]+])/', $html, $match)) {
+        if (strlen($match[1])) {
+            $match[2] = stripslashes($match[2]);
+        }
+        if (is_array($merge = json_decode($match[2], true))) {
+            $formats = array_merge($formats, $merge);
+        }
+    }
+    if (preg_match('/"adaptiveFormats(.?)":(\[[^]]+])/', $html, $match)) {
+        if (strlen($match[1])) {
+            $match[2] = stripslashes($match[2]);
+        }
+        if (is_array($merge = json_decode($match[2], true))) {
+            $formats = array_merge($formats, $merge);
+        }
+    }
+
+    $id = -1;
+    $width = 0;
+    $url = "";
+    $mimeType = "";
+    $qualityLabel = "";
+
+    foreach ($formats as $key => $format) {
+        if (preg_match('/^video\/(?:mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width < $format["width"]) {
+            $id = $key;
+            $width = $format["width"];
+        }
+    }
+
+    if ($id >= 0) {
+        if (isset($formats[$id]["url"])) {
+            $url = urldecode($formats[$id]["url"]);
+            $mimeType = $formats[$id]["mimeType"];
+            $qualityLabel = $formats[$id]["qualityLabel"];
+        } else if (isset($formats[$id]["signatureCipher"])) {
+            if (preg_match('/"jsUrl":"([^"]+)"/', $html, $js)) {
+                $js = $js[1];
+                $cache_js = str_replace("/", "_", $js);
+                $cache_js = str_replace(".", "_", $cache_js);
+
+                if (($modify = @file("cache/" . $cache_js)) === false) {
+                    $modify = getBase("https://www.youtube.com" . $js);
+                    $file = fopen("cache/" . $cache_js, "a");
+                    fwrite($file, implode("\n", $modify));
+                    fclose($file);
+                }
+
+                $signatureCipher = $formats[$id]["signatureCipher"];
+                $signatureCipher = explode("&", $signatureCipher);
+
+                $cipher = urldecode(substr($signatureCipher[0], 2));
+                $decipher = decipher($modify, $cipher);
+                $url = urldecode(substr($signatureCipher[2], 4));
+                $url .= "&sig=" . $decipher;
+                $mimeType = $formats[$id]["mimeType"];
+                $qualityLabel = $formats[$id]["qualityLabel"];
+            }
+        }
+    }
+    echo json_encode(["id" => $id, "url" => $url, "mimeType" => $mimeType, "qualityLabel" => $qualityLabel, "width" => $width]);
 } else {
     $url = "https://www.googleapis.com/youtube/v3/videos" .
-        "?key=" . $KEYS_INDEX[intval(date("G")) % count($KEYS_INDEX)] .
+        "?key=" . API_KEY .
         "&chart=mostPopular" .
         "&maxResults=" . $CFG["index"]["maxResults"] .
         "&regionCode=" . $CFG["index"]["regionCode"] .
