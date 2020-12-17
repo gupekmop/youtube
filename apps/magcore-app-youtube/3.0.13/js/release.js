@@ -3240,8 +3240,8 @@ function normalizeVideoDuration(result) {
 
         try {
           result = JSON.parse(result);
+          debug(JSON.stringify(result));
           if (result.url) {
-            debug(result.url);
             $scope.movie.url = result.url;
             $scope.play(data);
           } else {

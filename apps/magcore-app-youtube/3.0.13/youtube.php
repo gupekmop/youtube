@@ -276,6 +276,7 @@ if (isset($_GET["search"])) {
     $url = "";
     $mimeType = "";
     $qualityLabel = "";
+    $license = false;
 
     foreach ($formats as $key => $format) {
         if (preg_match('/^video\/(?:mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width < $format["width"]) {
@@ -289,32 +290,32 @@ if (isset($_GET["search"])) {
             $url = urldecode($formats[$id]["url"]);
             $mimeType = $formats[$id]["mimeType"];
             $qualityLabel = $formats[$id]["qualityLabel"];
-        } else if (isset($formats[$id]["signatureCipher"])) {
-            if (preg_match('/"jsUrl":"([^"]+)"/', $html, $js)) {
-                $js = $js[1];
-                $cache_js = str_replace("/", "_", $js);
-                $cache_js = str_replace(".", "_", $cache_js);
+        } else if (isset($formats[$id]["signatureCipher"]) && preg_match('/"jsUrl":"([^"]+)"/', $html, $js)) {
+            $js = $js[1];
+            $cache_js = str_replace("/", "_", $js);
+            $cache_js = str_replace(".", "_", $cache_js);
 
-                if (($modify = @file("cache/" . $cache_js)) === false) {
-                    $modify = getBase("https://www.youtube.com" . $js);
-                    $file = fopen("cache/" . $cache_js, "a");
-                    fwrite($file, implode("\n", $modify));
-                    fclose($file);
-                }
-
-                $signatureCipher = $formats[$id]["signatureCipher"];
-                $signatureCipher = explode("&", $signatureCipher);
-
-                $cipher = urldecode(substr($signatureCipher[0], 2));
-                $decipher = decipher($modify, $cipher);
-                $url = urldecode(substr($signatureCipher[2], 4));
-                $url .= "&sig=" . $decipher;
-                $mimeType = $formats[$id]["mimeType"];
-                $qualityLabel = $formats[$id]["qualityLabel"];
+            if (($modify = @file("cache/" . $cache_js)) === false) {
+                $modify = getBase("https://www.youtube.com" . $js);
+                $file = fopen("cache/" . $cache_js, "a");
+                fwrite($file, implode("\n", $modify));
+                fclose($file);
+            } else {
+                $modify = array_map("trim", $modify);
             }
+
+            $signatureCipher = explode("&", $formats[$id]["signatureCipher"]);
+
+            $cipher = urldecode(substr($signatureCipher[0], 2));
+            $decipher = decipher($modify, $cipher);
+            $url = urldecode(substr($signatureCipher[2], 4));
+            $url .= "&sig=" . $decipher;
+            $mimeType = $formats[$id]["mimeType"];
+            $qualityLabel = $formats[$id]["qualityLabel"];
+            $license = true;
         }
     }
-    echo json_encode(["id" => $id, "url" => $url, "mimeType" => $mimeType, "qualityLabel" => $qualityLabel, "width" => $width]);
+    echo json_encode(["id" => $id, "url" => $url, "mimeType" => $mimeType, "qualityLabel" => $qualityLabel, "width" => $width, "license" => $license]);
 } else {
     $url = "https://www.googleapis.com/youtube/v3/videos" .
         "?key=" . API_KEY .
