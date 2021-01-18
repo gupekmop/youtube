@@ -40,7 +40,6 @@ if (isset($_GET["search"])) {
     if (defined("API_SEARCH") && API_SEARCH === true) {
         //=========================================== API =============================================
 
-
         $url = "https://www.googleapis.com/youtube/v3/search" .
             "?key=" . API_KEY .
             "&part=snippet" .
@@ -138,6 +137,10 @@ if (isset($_GET["search"])) {
 
             function parseChannelRenderer($channelRenderer)
             {
+                $videoCount = "Нет видео";
+                if (isset($channelRenderer["videoCountText"])) {
+                    $videoCount = $channelRenderer["videoCountText"]["runs"][0]["text"] . $channelRenderer["videoCountText"]["runs"][1]["text"];
+                }
                 return [
                     "id" => "",
                     "canonicalBaseUrl" => $channelRenderer["longBylineText"]["runs"][0]["navigationEndpoint"]["browseEndpoint"]["canonicalBaseUrl"],
@@ -155,7 +158,7 @@ if (isset($_GET["search"])) {
                         "definition" => "",
                     ],
                     "statistics" => [
-                        "viewCount" => $channelRenderer["videoCountText"]["runs"][0]["text"] . $channelRenderer["videoCountText"]["runs"][1]["text"], //video count
+                        "viewCount" => $videoCount, //video count
                         "likeCount" => "",
                         "dislikeCount" => "",
                     ],
