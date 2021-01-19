@@ -14,6 +14,7 @@ $CFG = [
         "regionCode" => "RU", //по какому региону поиск, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
         "hl" => "ru-RU",
     ],
+    "novideos" => "Нет видео", //текст для каналов без загруженных видео
 ];
 
 function youtube($url)
@@ -137,7 +138,8 @@ if (isset($_GET["search"])) {
 
             function parseChannelRenderer($channelRenderer)
             {
-                $videoCount = "Нет видео";
+                global $CFG;
+                $videoCount = $CFG["novideos"];
                 if (isset($channelRenderer["videoCountText"])) {
                     $videoCount = $channelRenderer["videoCountText"]["runs"][0]["text"] . $channelRenderer["videoCountText"]["runs"][1]["text"];
                 }

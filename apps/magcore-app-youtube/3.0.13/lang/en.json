@@ -2,73 +2,65 @@
 	"meta": {
 		"charset": "utf-8",
 
-		"language": "ru",
-		"plural": "(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)"
+		"language": "en",
+		"plural": "(n != 1)"
 	},
 	"data": {
 		"": {
-			"Author": "Автор",
-			"Back": "Назад",
-			"Best": "Лучшее",
-			"Cancel": "Отмена",
-			"Close Guide": "Закрыть гид",
-			"Exit": "Выход",
-			"Exit from app?": "Выйти из приложения?",
-			"Guide": "Гид",
-			"In order to apply a new language, you must restart the application": "Для того чтобы применить новый язык необходимо перезагрузить приложение",
-			"Interface language": "Язык интерфейса",
-			"Language": "Язык",
-			"Live broadcasts are not supported": "Прямые трансляции не поддерживаются",
-			"Main": "Главная",
-			"No videos": "Нет видео",
-			"Off": "Выключен",
-			"Ok": "Ок",
-			"On": "Включен",
-			"Search": "Поиск",
-			"Settings": "Настройки",
-			"Video is not available": "Видео недоступно",
+			"Author": "Author",
+			"Back": "Back",
+			"Best": "Best",
+			"Cancel": "Cancel",
+			"Close Guide": "Close Guide",
+			"Exit": "Exit",
+			"Exit from app?": "Exit from app?",
+			"Guide": "Guide",
+			"In order to apply a new language, you must restart the application": "In order to apply a new language, you must restart the application",
+			"Interface language": "Interface language",
+			"Language": "Language",
+			"Live broadcasts are not supported": "Live broadcasts are not supported",
+			"Main": "Main",
+			"No videos": "No videos",
+			"Off": "Off",
+			"Ok": "Ok",
+			"On": "On",
+			"Search": "Search",
+			"Settings": "Settings",
+			"Video is not available": "Video is not available",
 			"Youtube": "Youtube",
-			"Youtube.com is a world famous video hosting, which allows users to watch, upload and share videos with their friends.": "Youtube.com  популярный мировой видеохостинг, где пользователи могут добавлять, просматривать, комментировать и делиться с друзьями видеозаписями.",
-			"ago": "назад",
+			"Youtube.com is a world famous video hosting, which allows users to watch, upload and share videos with their friends.": "Youtube.com is a world famous video hosting, which allows users to watch, upload and share videos with their friends.",
+			"ago": "ago",
 			"day": [
-				"день",
-				"дня",
-				"дней"
+				"day",
+				"days"
 			],
 			"hour": [
-				"час",
-				"часа",
-				"часов"
+				"hour",
+				"hours"
 			],
 			"minute": [
-				"минута",
-				"минуты",
-				"минут"
+				"minute",
+				"minutes"
 			],
 			"month": [
-				"месяц",
-				"месяца",
-				"месяцев"
+				"month",
+				"months"
 			],
 			"second": [
-				"секунда",
-				"секунды",
-				"се"
+				"second",
+				"seconds"
 			],
 			"subscriber": [
-				"подписчик",
-				"подписчика",
-				"подписчиков"
+				"subscriber",
+				"subscribers"
 			],
 			"view": [
-				"просмотр",
-				"просмотра",
-				"просмотров"
+				"view",
+				"views"
 			],
 			"year": [
-				"год",
-				"года",
-				"лет"
+				"year",
+				"years"
 			]
 		}
 	}
