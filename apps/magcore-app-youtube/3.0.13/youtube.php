@@ -1,20 +1,20 @@
 <?php
-define("API_KEY", "AIzaSyDjh5DKSn06D1lqhiC6-Zyn1hDtnt6iMKU"); //ключ Youtube Data API
-define("API_SEARCH", false); //true - для поиска через API
-define("SEARCH_LOGS", false); //true - логировать поисковые запросы в папку logs
+define("API_KEY", "AIzaSyDjh5DKSn06D1lqhiC6-Zyn1hDtnt6iMKU"); //ключ / key Youtube Data API
+define("API_SEARCH", false); //true - для поиска через API / for searching with API
+define("SEARCH_LOGS", false); //true - логировать поисковые запросы в папку logs / logging search requests to logs folder
 
 $CFG = [
     "index" => [
-        "maxResults" => 50, //кол-во видео на главной [1-50]
-        "regionCode" => "RU", //по какому региону искать тренды, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
+        "maxResults" => 50, //кол-во видео на главной / video count for trending [1-50]
+        "regionCode" => "RU", //по какому региону искать тренды / region for trending, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
         "hl" => "ru-RU",
     ],
     "search" => [
-        "maxResults" => 50, //кол-во видео в поиске [1-50]
-        "regionCode" => "RU", //по какому региону поиск, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
+        "maxResults" => 50, //кол-во видео в поиске / video count for searching [1-50]
+        "regionCode" => "RU", //по какому региону поиск / region for searching, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
         "hl" => "ru-RU",
     ],
-    "novideos" => "Нет видео", //текст для каналов без загруженных видео
+    "novideos" => "Нет видео", //текст для каналов без загруженных видео / text for channels without videos
 ];
 
 function youtube($url)
