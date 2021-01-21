@@ -6,7 +6,7 @@
 - Поменять ключ `API_KEY` на свой / change your `API_KEY`
 
 ## Необязательные действия:
-###English localization by default
+### English localization by default
 - If you want by default English interface and keyboard then change `DEFAULT_LANGUAGE_ENGLISH` to __true__ in `apps/magcore-app-youtube/3.0.13/js/release.js`
 - Trending and search localization settings in `apps/magcore-app-youtube/3.0.13/youtube.php`
 
