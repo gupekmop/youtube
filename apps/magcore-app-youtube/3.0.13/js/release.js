@@ -4937,53 +4937,56 @@ function normalizeVideoDuration(duration) {
   Router.prototype = Object.create(NumericType.prototype);
   Router.prototype.constructor = Router;
   Router.prototype.getPage = function (page, callback) {
-    debug('MODULE 56 - prototype.getPage()');
-    //debug('MODULE 56 - current page: ' + JSON.stringify(page));
     var state = this;
     page.page = +page.page || 0;
+    debug('MODULE 56 - prototype.getPage(' + page.page + ')');
     if (this.pages[page.page] && this.pages[page.page].parseId) {
       if (this.pages[page.page].cached) {
+        debug('MODULE 56 - CACHE - prototype.getPage(' + page.page + ') pageToken = ' + state.pages[page.page].parseId);
         callback(null, this.pages[page.page].data);
       } else {
-        ajax("get", "https://www.youtube.com" + this.pages[page.page].parseId, function (result, status) {
-          debug('MODULE 56 - prototype.getPage() ajax page > 0');
-          var data;
+        ajax("get", YOUTUBE_PHP + "?pageToken=" + this.pages[page.page].parseId, function (result, status) {
+          debug('MODULE 56 - AJAX - prototype.getPage(' + page.page + ') pageToken = ' + state.pages[page.page].parseId);
+          var response;
           var interestingPoint;
-          var a;
-          var b;
-          var resizewidth;
           if (status !== 200) {
             return void callback({
               message: "request got bad http status (" + status + ")"
             }, []);
           }
           try {
-            data = JSON.parse(result);
+            response = JSON.parse(result);
           } catch (ex) {
             interestingPoint = ex;
-            data = "";
+            response = "";
           }
-          return data ? (data.load_more_widget_html.trim().length > 10 ? (a = data.load_more_widget_html.indexOf('data-uix-load-more-href="') + 25, b = data.load_more_widget_html.indexOf('"', a), resizewidth = data.load_more_widget_html.substring(a, b).replace(/&amp;/g, "&")) : resizewidth = "", state.pages[page.page + 1] = {
-            parseId: resizewidth,
-            cached: false
-          }, state.pages[page.page].cached = true, state.pages[page.page].data = resolve(data.content_html), void callback(null, state.pages[page.page].data)) : void callback({
-            message: "parse error for page id " + state.pages[page.page].parseId,
-            code: interestingPoint
-          }, []);
+          if (response) {
+            state.pages[page.page + 1] = {
+              parseId: response.nextPageToken || "",
+              cached: false
+            };
+            state.pages[page.page].cached = true;
+            state.pages[page.page].data = parseItems(response.items);
+            return void callback(null, state.pages[page.page].data);
+          } else {
+            return void callback({
+              message: "parse error for page id " + state.pages[page.page].parseId,
+              code: interestingPoint
+            }, []);
+          }
         });
       }
     } else {
-      if (page.page) {
-        if (this.pages[page.page] && !this.pages[page.page].parseId) {
-          callback(null, []);
-        } else {
-          callback({
-            message: "wrong page number (page id not found in cache)"
-          }, []);
-        }
+      if (this.pages[page.page] && !this.pages[page.page].parseId) {
+          debug('MODULE 56 - CACHE - prototype.getPage(' + page.page + ') pageToken = ' + this.pages[page.page].parseId);
+          if (this.pages[page.page].cached) {
+            callback(null, this.pages[page.page].data);
+          } else {
+            callback(null, []);
+          }
       } else {
         ajax("get", YOUTUBE_PHP, function (result, status) {
-          debug('MODULE 56 - prototype.getPage() ajax page = 0');
+          debug('MODULE 56 - AJAX - prototype.getPage(' + page.page + ') pageToken =');
           if (status !== 200) {
             return void callback({
               message: "request got bad http status (" + status + ")"
@@ -4999,7 +5002,7 @@ function normalizeVideoDuration(duration) {
                 };
                 state.pages[0] = {
                   cached: true,
-                  parseId: "   ",
+                  parseId: "",
                   data: parseItems(response.items)
                 };
                 void callback(null, state.pages[0].data);
