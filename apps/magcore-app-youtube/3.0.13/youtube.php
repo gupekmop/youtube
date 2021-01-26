@@ -5,6 +5,7 @@ define("SEARCH_LOGS", false); //true - логировать поисковые �
 
 $CFG = [
     "index" => [
+        "cacheTime" => 15, //кол-во минут кеширования трендов на стороне сервера / trending caching in minutes on server side
         "maxResults" => 50, //кол-во видео на главной / video count for trending [1-50]
         "regionCode" => "RU", //по какому региону искать тренды / region for trending, RU - Россия, UA - Украина, BY - Беларусь (другие страны смотреть ISO 3166-1 alpha-2)
         "hl" => "ru-RU",
@@ -322,17 +323,24 @@ if (isset($_GET["search"])) {
     }
     echo json_encode(["id" => $id, "url" => $url, "mimeType" => $mimeType, "qualityLabel" => $qualityLabel, "width" => $width, "license" => $license]);
 } else {
-    $url = "https://www.googleapis.com/youtube/v3/videos" .
-        "?key=" . API_KEY .
-        "&chart=mostPopular" .
-        "&maxResults=" . $CFG["index"]["maxResults"] .
-        "&regionCode=" . $CFG["index"]["regionCode"] .
-        "&hl=" . $CFG["index"]["hl"] .
-        "&part=snippet,contentDetails,statistics";
+    $filename = "cache/trending" . (isset($_GET["pageToken"]) ? "_" . $_GET["pageToken"] : "") . ".json";
+    if (($time = filemtime($filename)) !== false && time() - $time < $CFG["index"]["cacheTime"] * 60 && filesize($filename) > 0) {
+        echo file_get_contents($filename);
+    } else {
+        $url = "https://www.googleapis.com/youtube/v3/videos" .
+            "?key=" . API_KEY .
+            "&chart=mostPopular" .
+            "&maxResults=" . $CFG["index"]["maxResults"] .
+            "&regionCode=" . $CFG["index"]["regionCode"] .
+            "&hl=" . $CFG["index"]["hl"] .
+            "&part=snippet,contentDetails,statistics";
 
-    if (isset($_GET["pageToken"])) {
-        $url .= "&pageToken=" . $_GET["pageToken"];
+        if (isset($_GET["pageToken"])) {
+            $url .= "&pageToken=" . $_GET["pageToken"];
+        }
+
+        $json = youtube($url);
+        file_put_contents($filename, $json);
+        echo $json;
     }
-
-    echo youtube($url);
 }
