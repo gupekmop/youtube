@@ -14,7 +14,7 @@
 - Trending and search localization settings in `apps/magcore-app-youtube/3.0.13/youtube.php`
 
 ### &#127479;&#127482; Поиск через API (если ключ с большой квотой) | &#127482;&#127480; Search with API (if key has big quota)
-- Поменять `API_SEARCH` на __true__ | &#127482;&#127480; Change `API_SEARCH` to __true__
+- &#127479;&#127482; Поменять `API_SEARCH` на __true__ | &#127482;&#127480; Change `API_SEARCH` to __true__
 
 ### &#127479;&#127482; Логирование поиска в папку .../logs/ | &#127482;&#127480; Logging search queries in folder .../logs/
 - &#127479;&#127482; Поменять `SEARCH_LOGS` на __true__ | &#127482;&#127480; Change `SEARCH_LOGS` to __true__
