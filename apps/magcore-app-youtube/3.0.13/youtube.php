@@ -172,7 +172,7 @@ if (isset($_GET["search"])) {
             $json = [];
 
             if ($html !== false && preg_match("/ytInitialData = ({.+?});/", $html, $ytInitialData)) {
-				//$json["ytInitialData"] = $ytInitialData[1];
+                //$json["ytInitialData"] = $ytInitialData[1];
                 unset($html);
                 $ytInitialData = json_decode($ytInitialData[1], true);
                 $contents = $ytInitialData["contents"]["twoColumnSearchResultsRenderer"]["primaryContents"]["sectionListRenderer"]["contents"];

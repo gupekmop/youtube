@@ -2623,14 +2623,14 @@ function normalizeVideoDuration(duration) {
       this.context = null;
       this.prepare(data);
     },
-    prepare: function (e, data) {
+    prepare: function (element, data) {
       debug("MODULE 36 - prepare()");
-      debug("https://www.youtube.com/watch?v=" + e.video.id);
+      debug("https://www.youtube.com/watch?v=" + element.video.id);
       var $scope = this;
-      this.movie.title = e.video.title;
-      this.movie.id = e.video.id;
+      this.movie.title = element.video.title;
+      this.movie.id = element.video.id;
       searchContactPanel.show();
-      ajax("get", "https://www.youtube.com/watch?v=" + e.video.id, function (result, status) {
+      ajax("get", "https://www.youtube.com/watch?v=" + element.video.id, function (result, status) {
         searchContactPanel.hide();
         if (status !== 200) {
           return window.core.notify({
@@ -2658,6 +2658,9 @@ function normalizeVideoDuration(duration) {
               regexp[2] = regexp[2].replace(/\\(.)/g, "$1");
             }
             formats = formats.concat(JSON.parse(regexp[2]));
+          }
+          if (formats.length === 0) {
+
           }
           //debug(JSON.stringify(formats));
           var length = formats.length;
@@ -2746,12 +2749,30 @@ function normalizeVideoDuration(duration) {
               });
             }
           } else {
-            debug("MODULE 36 - URL NOT FOUND #2");
-            return window.core.notify({
-              title: gettext("Video is not available"),
-              icon: "alert",
-              type: "warning",
-              timeout: 5E3
+            debug("MODULE 36 - FORMATS NOT FOUND");
+            ajax("get", YOUTUBE_PHP + "?v=" + element.video.id, function (result, status) {
+              if (status !== 200) {
+                return window.core.notify({
+                  title: gettext("Video is not available"),
+                  icon: "alert",
+                  type: "warning",
+                  timeout: 5E3
+                });
+              }
+
+              result = JSON.parse(result);
+              if (result.url) {
+                debug(result.url);
+                $scope.movie.url = result.url;
+                $scope.play(data);
+              } else {
+                return window.core.notify({
+                  title: gettext("Video is not available"),
+                  icon: "alert",
+                  type: "warning",
+                  timeout: 5E3
+                });
+              }
             });
           }
         } catch (ex) {
@@ -4788,144 +4809,6 @@ function normalizeVideoDuration(duration) {
   self.add(d);
   module.exports = self;
 }, function (module, exports, require) {//require(56)
-  function resolve(width) {
-    var packageId;
-    var a;
-    var n;
-    var s;
-    var r;
-    var t;
-    var awesomeIcon;
-    var name;
-    var p;
-    var i;
-    var albumIDwithAuthkey;
-    var type;
-    var playlistId;
-    var hide;
-    var items = [];
-    var crossfilterable_layers = width.split('<li class="yt-shelf-grid-item');
-    var length = crossfilterable_layers.length;
-    for (var layer_i = 0; layer_i < length; layer_i++) {
-      albumIDwithAuthkey = crossfilterable_layers[layer_i];
-      if (albumIDwithAuthkey.indexOf("yt-lockup-content") !== -1) {
-        if (albumIDwithAuthkey.indexOf("yt-lockup-playlist") !== -1) {
-          type = "playlist";
-        } else {
-          if (albumIDwithAuthkey.indexOf("yt-lockup-video") === -1 || albumIDwithAuthkey.indexOf("branded-page-module") !== -1 || albumIDwithAuthkey.indexOf("data-set-reminder-text") !== -1) {
-            continue;
-          }
-          type = "video";
-          hide = albumIDwithAuthkey.indexOf("yt-badge-live") !== -1;
-        }
-        p = albumIDwithAuthkey.indexOf("//i.ytimg");
-        i = albumIDwithAuthkey.indexOf('"', p);
-        awesomeIcon = "https:" + albumIDwithAuthkey.substring(p, i).replace(/&amp;/g, "&");
-        if (albumIDwithAuthkey.indexOf('<a href="/channel/') === -1) {
-          if (albumIDwithAuthkey.indexOf("data-channel-external-id=") === -1) {
-            if (albumIDwithAuthkey.indexOf('<a href="/user/') === -1) {
-              name = "";
-            } else {
-              p = albumIDwithAuthkey.indexOf('<a href="/user/') + 10;
-              i = albumIDwithAuthkey.indexOf('"', p);
-              name = albumIDwithAuthkey.substring(p, i);
-            }
-          } else {
-            p = albumIDwithAuthkey.indexOf('data-channel-external-id="') + 26;
-            i = albumIDwithAuthkey.indexOf('"', p);
-            name = "channel/" + albumIDwithAuthkey.substring(p, i);
-          }
-        } else {
-          p = albumIDwithAuthkey.indexOf('<a href="/channel/') + 10;
-          i = albumIDwithAuthkey.indexOf('"', p);
-          name = albumIDwithAuthkey.substring(p, i);
-        }
-        if (type === "playlist") {
-          p = albumIDwithAuthkey.indexOf('" dir="ltr">') + 12;
-          i = albumIDwithAuthkey.indexOf("</a><span", p);
-          t = albumIDwithAuthkey.substring(p, i);
-          if (albumIDwithAuthkey.indexOf('<div class="yt-lockup-byline ">YouTube</div>') !== -1) {
-            name = "";
-          }
-          p = albumIDwithAuthkey.indexOf('<a href="/watch?v=') + 9;
-          i = albumIDwithAuthkey.indexOf('"', p);
-          playlistId = albumIDwithAuthkey.substring(p, i).replace("&amp;", "&");
-          p = albumIDwithAuthkey.indexOf('" dir="ltr">') + 12;
-          i = albumIDwithAuthkey.indexOf("<", p);
-          a = albumIDwithAuthkey.substring(p, i);
-          items.push({
-            value: 1,
-            playlistId: playlistId,
-            channel: {
-              title: a.substr(0, 100),
-              id: name
-            },
-            title: t.substr(0, 100),
-            icon: awesomeIcon,
-            type: "playlist",
-            channelTitle: a.substr(0, 100),
-            viewCount: " ",
-            duration: " ",
-            publishedAt: " ",
-            locale: {
-              publishedAt: " ",
-              viewCount: " ",
-              channelTitle: a.substr(0, 100)
-            }
-          });
-        }
-        if (type === "video") {
-          p = albumIDwithAuthkey.indexOf('data-context-item-id="') + 22;
-          i = albumIDwithAuthkey.indexOf('"', p);
-          packageId = albumIDwithAuthkey.substring(p, i);
-          p = albumIDwithAuthkey.indexOf('<span class="video-time" aria-hidden="true">') + 44;
-          i = albumIDwithAuthkey.indexOf("</span>", p);
-          n = albumIDwithAuthkey.substring(p, i);
-          p = albumIDwithAuthkey.indexOf('<ul class="yt-lockup-meta-info"><li>') + 36;
-          i = albumIDwithAuthkey.indexOf(" ", p);
-          s = albumIDwithAuthkey.substring(p, i);
-          p = albumIDwithAuthkey.indexOf("</li><li>", p) + 9;
-          i = albumIDwithAuthkey.indexOf("</li></ul></div>", p);
-          r = albumIDwithAuthkey.substring(p, i);
-          p = albumIDwithAuthkey.indexOf('" dir="ltr">') + 12;
-          if (p === 11) {
-            p = albumIDwithAuthkey.indexOf(' dir="ltr">') + 11;
-            if (p === 10) {
-              p = albumIDwithAuthkey.indexOf('" dir="rtl">') + 12;
-            }
-          }
-          i = albumIDwithAuthkey.indexOf("</", p);
-          t = albumIDwithAuthkey.substring(p, i);
-          p = albumIDwithAuthkey.indexOf('<a href="', i);
-          p = albumIDwithAuthkey.indexOf(">", p) + 1;
-          i = albumIDwithAuthkey.indexOf("</a>", p);
-          a = albumIDwithAuthkey.substring(p, i);
-          items.push({
-            value: 1,
-            id: packageId,
-            channelTitle: a.substr(0, 100),
-            duration: hide ? "" : n.substr(0, 100),
-            realDuration: hide ? "" : n.substr(0, 100),
-            viewCount: s.substr(0, 100),
-            publishedAt: hide ? "" : r.substr(0, 100),
-            dimension: "",
-            definition: "",
-            title: t.substr(0, 100),
-            icon: awesomeIcon,
-            channelId: name,
-            type: "video",
-            locale: {
-              publishedAt: hide ? "" : r.substr(0, 100),
-              viewCount: s.substr(0, 100),
-              channelTitle: a.substr(0, 100)
-            }
-          });
-        }
-      }
-    }
-    return items;
-  }
-
   function Router() {
     NumericType.call(this);
     this.pages = {};
