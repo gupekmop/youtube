@@ -2659,9 +2659,6 @@ function normalizeVideoDuration(duration) {
             }
             formats = formats.concat(JSON.parse(regexp[2]));
           }
-          if (formats.length === 0) {
-
-          }
           //debug(JSON.stringify(formats));
           var length = formats.length;
           var id = -1;
