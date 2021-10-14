@@ -35,9 +35,7 @@ header("Content-type: application/json; charset=utf-8");
 
 if (isset($_GET["search"])) {
     if (defined("SEARCH_LOGS") && SEARCH_LOGS === true) {
-        $file = fopen("logs/" . date("Ymd") . ".log", "a");
-        fwrite($file, date("H:i:s") . " - " . $_SERVER["REMOTE_ADDR"] . " - " . rawurldecode($_GET["search"]) . "\n");
-        fclose($file);
+        file_put_contents("logs/" . date("Ymd") . ".log", date("H:i:s") . " - " . $_SERVER["REMOTE_ADDR"] . " - " . rawurldecode($_GET["search"]) . "\n", FILE_APPEND | LOCK_EX);
     }
     if (defined("API_SEARCH") && API_SEARCH === true) {
         //=========================================== API =============================================
@@ -80,7 +78,7 @@ if (isset($_GET["search"])) {
     } else {
         //=========================================== PARSING =============================================
         //=========================================== CHANNEL =============================================
-        if (preg_match("/^(?:\/user\/|\/channel\/)/", $_GET["search"])) {
+        if (preg_match("/^\/(user|channel|c)\//", $_GET["search"])) {
             $html = file_get_contents("https://www.youtube.com" . $_GET["search"] . "/videos");
 
             if (preg_match_all('/"gridVideoRenderer":{"videoId":"([^"]+)"/', $html, $videoId)) {
@@ -269,14 +267,14 @@ if (isset($_GET["search"])) {
             $formats = array_merge($formats, $merge);
         }
     }
-    if (preg_match('/"adaptiveFormats(.?)":(\[[^]]+])/', $html, $match)) {
-        if (strlen($match[1])) {
-            $match[2] = stripslashes($match[2]);
-        }
-        if (is_array($merge = json_decode($match[2], true))) {
-            $formats = array_merge($formats, $merge);
-        }
-    }
+    //if (preg_match('/"adaptiveFormats(.?)":(\[[^]]+])/', $html, $match)) {
+    //    if (strlen($match[1])) {
+    //        $match[2] = stripslashes($match[2]);
+    //    }
+    //    if (is_array($merge = json_decode($match[2], true))) {
+    //        $formats = array_merge($formats, $merge);
+    //    }
+    //}
 
     $id = -1;
     $width = 0;
@@ -286,7 +284,7 @@ if (isset($_GET["search"])) {
     $license = false;
 
     foreach ($formats as $key => $format) {
-        if (preg_match('/^video\/(?:mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width < $format["width"]) {
+        if (preg_match('/^video\/(mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width < $format["width"]) {
             $id = $key;
             $width = $format["width"];
         }
@@ -304,9 +302,7 @@ if (isset($_GET["search"])) {
 
             if (($modify = @file("cache/" . $cache_js)) === false) {
                 $modify = getBase("https://www.youtube.com" . $js);
-                $file = fopen("cache/" . $cache_js, "a");
-                fwrite($file, implode("\n", $modify));
-                fclose($file);
+                file_put_contents("cache/" . $cache_js, implode("\n", $modify), FILE_APPEND | LOCK_EX);
             } else {
                 $modify = array_map("trim", $modify);
             }

@@ -2652,26 +2652,26 @@ function normalizeVideoDuration(duration) {
             }
             formats = formats.concat(JSON.parse(regexp[2]));
           }
-          regexp = result.match(/"adaptiveFormats(.?)":(\[[^\]]+])/);
-          if (regexp) {
-            if (regexp[1].length) {
-              regexp[2] = regexp[2].replace(/\\(.)/g, "$1");
-            }
-            formats = formats.concat(JSON.parse(regexp[2]));
-          }
+          //regexp = result.match(/"adaptiveFormats(.?)":(\[[^\]]+])/);
+          //if (regexp) {
+          //  if (regexp[1].length) {
+          //    regexp[2] = regexp[2].replace(/\\(.)/g, "$1");
+          //  }
+          //  formats = formats.concat(JSON.parse(regexp[2]));
+          //}
           //debug(JSON.stringify(formats));
           var length = formats.length;
           var id = -1;
           var width = 0;
           for (var i = 0; i < length; i++) {
-            if (formats[i]["mimeType"].match(/^video\/(?:mp4|3gpp);/) && formats[i].hasOwnProperty("audioChannels") && formats[i].hasOwnProperty("width") && width < formats[i]["width"]) {
+            if (formats[i]["mimeType"].match(/^video\/(mp4|3gpp);/) && formats[i].hasOwnProperty("audioChannels") && formats[i].hasOwnProperty("width") && width < formats[i]["width"]) {
               id = i;
               width = formats[i]["width"];
             }
           }
           if (id >= 0) {
             if (formats[id].hasOwnProperty("url")) {
-              debug("URL #" + id + "/" + (length - 1) + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
+              debug("URL #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
               url = formats[id]["url"];
             } else if (formats[id].hasOwnProperty("signatureCipher")) {
               signatureCipher = formats[id]["signatureCipher"];
@@ -2686,7 +2686,7 @@ function normalizeVideoDuration(duration) {
                   var signature = decodeURIComponent(signatureCipher[0].substr(2));
                   //debug(signature);
                   //debug(decipher(CACHE_CIPHER[base_js], signature));
-                  debug("CIPHER #" + id + "/" + (length - 1) + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
+                  debug("CIPHER #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
                   url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(CACHE_CIPHER[base_js], signature));
                 } else {
                   url_cipher = "true";
@@ -2722,7 +2722,7 @@ function normalizeVideoDuration(duration) {
                       var signature = decodeURIComponent(signatureCipher[0].substr(2));
                       //debug(signature);
                       //debug(decipher(CACHE_CIPHER[base_js], signature));
-                      debug("CIPHER #" + id + "/" + (length - 1) + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
+                      debug("CIPHER #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
                       url_cipher = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(CACHE_CIPHER[base_js], signature));
                       debug(url_cipher);
                       $scope.movie.url = url_cipher;
