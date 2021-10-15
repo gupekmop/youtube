@@ -211,25 +211,25 @@ if (isset($_GET["search"])) {
         }
     }
 } else if (isset($_GET["v"])) {
-    function decipher($arr, $a)
+    function decipher($arr, $sign)
     {
-        $a = str_split($a);
+        $sign = str_split($sign);
 
         foreach ($arr as $do) {
             if ($do === "r") {
-                $a = array_reverse($a);
+                $sign = array_reverse($sign);
             } else if ($do[0] === "c") {
                 $do = intval(substr($do, 1));
-                $c = $a[0];
-                $a[0] = $a[$do % count($a)];
-                $a[$do % count($a)] = $c;
+                $c = $sign[0];
+                $sign[0] = $sign[$do % count($sign)];
+                $sign[$do % count($sign)] = $c;
             } else if ($do[0] === "s") {
                 $do = intval(substr($do, 1));
-                array_splice($a, 0, $do);
+                array_splice($sign, 0, $do);
             }
         }
 
-        return implode("", $a);
+        return implode("", $sign);
     }
 
     function getBase($script)
@@ -307,11 +307,11 @@ if (isset($_GET["search"])) {
                 $modify = array_map("trim", $modify);
             }
 
-            $signatureCipher = explode("&", $formats[$id]["signatureCipher"]);
+            parse_str($formats[$id]["signatureCipher"], $signatureCipher);
 
-            $cipher = urldecode(substr($signatureCipher[0], 2));
-            $decipher = decipher($modify, $cipher);
-            $url = urldecode(substr($signatureCipher[2], 4));
+            $signature = urldecode($signatureCipher["s"]);
+            $decipher = decipher($modify, $signature);
+            $url = urldecode($signatureCipher["url"]);
             $url .= "&sig=" . $decipher;
             $mimeType = $formats[$id]["mimeType"];
             $qualityLabel = $formats[$id]["qualityLabel"];
