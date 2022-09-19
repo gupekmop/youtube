@@ -2660,8 +2660,9 @@ function normalizeVideoDuration(duration) {
           var length = formats.length;
           var id = -1;
           var width = 0, width_short = 10000;
+          var old_mag = ["MAG250", "MAG254", "MAG275", "MAG276"].indexOf(require(53).deviceModel()) !== -1;
           for (var i = 0; i < length; i++) {
-            if (formats[i].hasOwnProperty("approxDurationMs") && formats[i]["approxDurationMs"] < 60000) {
+            if (old_mag || formats[i].hasOwnProperty("approxDurationMs") && formats[i]["approxDurationMs"] < 60000) {
               if (formats[i]["mimeType"].match(/^video\/(mp4|3gpp);/) && formats[i].hasOwnProperty("audioChannels") && formats[i].hasOwnProperty("width") && width_short > formats[i]["width"]) {
                 id = i;
                 width_short = formats[i]["width"];
@@ -2686,17 +2687,17 @@ function normalizeVideoDuration(duration) {
                   timeout: 5E3
                 });
               }
-              var throttle = result_js.match(/\.get\("n"\)\)&&\(\w=(\w+?)(\[\d])?\(\w\)/);
+              var throttle = result_js.match(/\.get\("n"\)\)&&\(\w=([_$\w]+?)(\[\d])?\(\w\)/);
               var unthrottle = null;
               if (throttle) {
                 //debug(throttle);
                 if (throttle[2]) {
-                  throttle = result_js.match(new RegExp("var " + throttle[1] + "=\\[(\\w+)];"));
-                  //debug(throttle);
+                  throttle = result_js.match(new RegExp("var " + throttle[1].replace(/\$/g, "\\$") + "=\\[(\\w+)];"));
+                  //debug(throttle[1]);
                 }
                 throttle = result_js.replace(/(\r\n|\n|\r)/g, '').match(new RegExp(throttle[1] + "=(function\\(\\w\\)\\{(.+?)};)"));
                 if (throttle) {
-                  //debug(throttle);
+                  //debug(throttle[1]);
                   eval('unthrottle = ' + throttle[1]);
                 }
               }
