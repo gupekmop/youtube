@@ -2752,7 +2752,7 @@ function normalizeVideoDuration(duration) {
                   //debug(decipher(modify.join(";"), signature));
                   debug("CIPHER #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
                   url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(modify.join(";"), signature));
-                  debug(url);
+                  //debug(url);
                   throttle = url.match(/&n=(.+?)&/);
                   if (throttle) {
                     throttle_decode = unthrottle(throttle[1]);
