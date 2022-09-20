@@ -2696,9 +2696,8 @@ function normalizeVideoDuration(duration) {
                   throttle = result_js.match(new RegExp("var " + throttle[1].replace(/\$/g, "\\$") + "=\\[(\\w+)];"));
                   //debug(throttle[1]);
                 }
-                throttle = result_js.replace(/(\r\n|\n|\r)/g, '').match(new RegExp(throttle[1] + "=(function\\(\\w\\)\\{(.+?)};)"));
+                throttle = result_js.replace(/(\r\n|\n|\r)/g, ' ').match(new RegExp(throttle[1] + "=(function\\(\\w\\)\\{(.+?)};)"));
                 if (throttle) {
-                  throttle[1] = throttle[1].replace(/([$\w])\+\+([$\w])/g, '$1+ +$2').replace(/([$\w])--([$\w])/g, '$1- -$2');
                   //debug(throttle[1]);
                   try {
                     eval('unthrottle = ' + throttle[1]);
