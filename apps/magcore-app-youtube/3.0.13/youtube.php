@@ -278,15 +278,24 @@ if (isset($_GET["search"])) {
 
     $id = -1;
     $width = 0;
+    $width_short = 10000;
     $url = "";
     $mimeType = "";
     $qualityLabel = "";
     $license = false;
+    $old_mag = in_array($_GET["model"], ["MAG250", "MAG254", "MAG275", "MAG276"]);
 
     foreach ($formats as $key => $format) {
-        if (preg_match('/^video\/(mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width < $format["width"]) {
-            $id = $key;
-            $width = $format["width"];
+        if ($old_mag || isset($format["approxDurationMs"]) && $format["approxDurationMs"] < 60000) {
+            if (preg_match('/^video\/(mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width_short > $format["width"]) {
+                $id = $key;
+                $width_short = $format["width"];
+            }
+        } else {
+            if (preg_match('/^video\/(mp4|3gpp);/', $format["mimeType"]) && isset($format["audioChannels"], $format["width"]) && $width < $format["width"]) {
+                $id = $key;
+                $width = $format["width"];
+            }
         }
     }
 

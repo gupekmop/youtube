@@ -2660,7 +2660,7 @@ function normalizeVideoDuration(duration) {
           var length = formats.length;
           var id = -1;
           var width = 0, width_short = 10000;
-          var old_mag = ["MAG250", "MAG254", "MAG275", "MAG276"].indexOf(require(53).deviceModel()) !== -1;
+          var old_mag = ["MAG250", "MAG254", "MAG275", "MAG276"].indexOf(window.top.gSTB.GetDeviceModelExt()) !== -1;
           for (var i = 0; i < length; i++) {
             if (old_mag || formats[i].hasOwnProperty("approxDurationMs") && formats[i]["approxDurationMs"] < 60000) {
               if (formats[i]["mimeType"].match(/^video\/(mp4|3gpp);/) && formats[i].hasOwnProperty("audioChannels") && formats[i].hasOwnProperty("width") && width_short > formats[i]["width"]) {
@@ -2687,8 +2687,9 @@ function normalizeVideoDuration(duration) {
                   timeout: 5E3
                 });
               }
-              var throttle = result_js.match(/\.get\("n"\)\)&&\(\w=([_$\w]+?)(\[\d])?\(\w\)/);
-              var unthrottle = null;
+              var throttle = result_js.match(/\.get\("n"\)\)&&\(\w=([$\w]+?)(\[\d])?\(\w\)/);
+              var unthrottle = function(a){return a};
+              var throttle_decode;
               if (throttle) {
                 //debug(throttle);
                 if (throttle[2]) {
@@ -2697,8 +2698,13 @@ function normalizeVideoDuration(duration) {
                 }
                 throttle = result_js.replace(/(\r\n|\n|\r)/g, '').match(new RegExp(throttle[1] + "=(function\\(\\w\\)\\{(.+?)};)"));
                 if (throttle) {
+                  throttle[1] = throttle[1].replace(/([$\w])\+\+([$\w])/g, '$1+ +$2').replace(/([$\w])--([$\w])/g, '$1- -$2');
                   //debug(throttle[1]);
-                  eval('unthrottle = ' + throttle[1]);
+                  try {
+                    eval('unthrottle = ' + throttle[1]);
+                  } catch (e) {
+                    debug(e);
+                  }
                 }
               }
               if (id >= 0) {
@@ -2707,8 +2713,10 @@ function normalizeVideoDuration(duration) {
                   url = formats[id]["url"];
                   //debug(url);
                   throttle = url.match(/&n=(.+?)&/);
-                  if (throttle && unthrottle) {
-                    url = url.replace(throttle[1], unthrottle(throttle[1]));
+                  if (throttle) {
+                    throttle_decode = unthrottle(throttle[1]);
+                    url = url.replace(throttle[1], throttle_decode);
+                    //debug(throttle[1] + " => " + throttle_decode);
                     //debug(url);
                   }
                   $scope.movie.url = url;
@@ -2744,10 +2752,12 @@ function normalizeVideoDuration(duration) {
                   //debug(decipher(modify.join(";"), signature));
                   debug("CIPHER #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
                   url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(modify.join(";"), signature));
-                  //debug(url);
+                  debug(url);
                   throttle = url.match(/&n=(.+?)&/);
-                  if (throttle && unthrottle) {
-                    url = url.replace(throttle[1], unthrottle(throttle[1]));
+                  if (throttle) {
+                    throttle_decode = unthrottle(throttle[1]);
+                    url = url.replace(throttle[1], throttle_decode);
+                    //debug(throttle[1] + " => " + throttle_decode);
                     //debug(url);
                   }
                   $scope.movie.url = url;
@@ -2755,7 +2765,7 @@ function normalizeVideoDuration(duration) {
                 }
               } else {
                 debug("MODULE 36 - FORMATS NOT FOUND");
-                ajax("get", YOUTUBE_PHP + "?v=" + element.video.id, function (result, status) {
+                ajax("get", YOUTUBE_PHP + "?v=" + element.video.id + "&model=" + window.top.gSTB.GetDeviceModelExt(), function (result, status) {
                   if (status !== 200) {
                     return window.core.notify({
                       title: gettext("Video is not available"),
@@ -2769,8 +2779,10 @@ function normalizeVideoDuration(duration) {
                     //debug(result.url);
                     url = result.url;
                     throttle = url.match(/&n=(.+?)&/);
-                    if (throttle && unthrottle) {
-                      url = url.replace(throttle[1], unthrottle(throttle[1]));
+                    if (throttle) {
+                      throttle_decode = unthrottle(throttle[1]);
+                      url = url.replace(throttle[1], throttle_decode);
+                      //debug(throttle[1] + " => " + throttle_decode);
                       //debug(url);
                     }
                     $scope.movie.url = url;
