@@ -2687,23 +2687,16 @@ function normalizeVideoDuration(duration) {
                   timeout: 5E3
                 });
               }
-              var throttle = result_js.match(/\.get\("n"\)\)&&\(\w=([$\w]+?)(\[\d])?\(\w\)/);
+              result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
+              var throttle = result_js.match(/function\(a\){var b=String\.prototype\.split\.call\(a,""\).+?Array\.prototype\.join\.call\(b,""\)}/);
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
-                //debug(throttle);
-                if (throttle[2]) {
-                  throttle = result_js.match(new RegExp("var " + throttle[1].replace(/\$/g, "\\$") + "=\\[(\\w+)][;,]"));
-                  //debug(throttle[1]);
-                }
-                throttle = result_js.replace(/(\r\n|\n|\r)/g, ' ').match(new RegExp(throttle[1] + "=(function\\(\\w\\)\\{.+?b\\.join\\(\"\"\\)};)"));
-                if (throttle) {
-                  //debug(throttle[1]);
-                  try {
-                    eval('unthrottle = ' + throttle[1]);
-                  } catch (e) {
-                    debug(e);
-                  }
+                //debug(throttle[0]);
+                try {
+                  eval('unthrottle = ' + throttle[0]);
+                } catch (e) {
+                  debug(e);
                 }
               }
               if (id >= 0) {
