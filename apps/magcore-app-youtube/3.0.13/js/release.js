@@ -2688,7 +2688,7 @@ function normalizeVideoDuration(duration) {
                 });
               }
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
-              var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,""\)|a\.split\(""\)),c=.+?(?:Array\.prototype\.join\.call\(b,""\)|b\.join\(""\))}/);
+              var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,(?:""|\("",""\))\)|a\.split\(""\)),c=.+?(?:Array\.prototype\.join\.call\(b,(?:""|\("",""\))\)|b\.join\(""\))}/);
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
