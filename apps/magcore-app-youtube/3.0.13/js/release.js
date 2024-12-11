@@ -2642,7 +2642,7 @@ function normalizeVideoDuration(duration) {
           var url = "";
           var formats = [];
           var regexp;
-          regexp = result.match(/"formats(.?)":(\[[^\]]+])/);
+          regexp = result.match(/"formats(.?)":(\[.+?])/);
           if (regexp) {
             if (regexp[1].length) {
               regexp[2] = regexp[2].replace(/\\(.)/g, "$1");
@@ -2674,7 +2674,7 @@ function normalizeVideoDuration(duration) {
               }
             }
           }
-          var base_js = result.match(/"jsUrl":"([^"]+)"/);
+          var base_js = result.match(/"jsUrl":"(.+?)"/);
           if (base_js) {
             base_js = base_js[1];
             //debug(base_js);
