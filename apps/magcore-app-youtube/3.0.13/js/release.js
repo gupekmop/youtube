@@ -2656,7 +2656,7 @@ function normalizeVideoDuration(duration) {
           //  }
           //  formats = formats.concat(JSON.parse(regexp[2]));
           //}
-          //debug(JSON.stringify(formats));
+          debug(JSON.stringify(formats));
           var length = formats.length;
           var id = -1;
           var width = 0, width_short = 10000;
@@ -2677,7 +2677,7 @@ function normalizeVideoDuration(duration) {
           var base_js = result.match(/"jsUrl":"(.+?)"/);
           if (base_js) {
             base_js = base_js[1];
-            //debug(base_js);
+            debug(base_js);
             ajax("get", "https://www.youtube.com" + base_js, function (result_js, status_js) {
               if (status_js !== 200) {
                 return window.core.notify({
@@ -2693,7 +2693,7 @@ function normalizeVideoDuration(duration) {
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
-                //debug(throttle[0]);
+                debug(throttle[0]);
                 try {
                   eval('unthrottle = ' + throttle[0]);
                 } catch (e) {
