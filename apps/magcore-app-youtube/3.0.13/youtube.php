@@ -81,7 +81,7 @@ if (isset($_GET["search"])) {
         if (preg_match("/^\/(user|channel|c)\//", $_GET["search"])) {
             $html = file_get_contents("https://www.youtube.com" . $_GET["search"] . "/videos");
 
-            if (preg_match_all('/"gridVideoRenderer":{"videoId":"([^"]+)"/', $html, $videoId)) {
+            if (preg_match_all('/"gridVideoRenderer":{"videoId":"(.+?)"/', $html, $videoId)) {
                 unset($html);
 
                 $url = "https://www.googleapis.com/youtube/v3/videos" .
@@ -236,16 +236,16 @@ if (isset($_GET["search"])) {
     {
         $res = [];
         $script = file_get_contents($script);
-        if (preg_match('/a=a\.split\(""\);(.+?);return a\.join\(""\)/', $script, $functions)) {
+        if (preg_match('/\w=\w\.split\(""\);(.+?);return \w\.join\(""\)/', $script, $functions)) {
             $functions = explode(";", $functions[1]);
 
             foreach ($functions as $function) {
-                if (preg_match('/[\w\d]+\.([\w\d]+)\(a,(\d+)\)/', $function, $func)) {
-                    if (preg_match('/' . $func[1] . ':function\(a\){a\.reverse\(\)}/', $script)) {
+                if (preg_match('/[\w\d]+\.([\w\d]+)\(\w,(\d+)\)/', $function, $func)) {
+                    if (preg_match('/' . $func[1] . ':function\(\w\){\w\.reverse\(\)}/', $script)) {
                         $res[] = "r";
-                    } else if (preg_match('/' . $func[1] . ':function\(a,b\){var c=a\[0];a\[0]=a\[b%a\.length];a\[b%a\.length]=c}/', $script)) {
+                    } else if (preg_match('/' . $func[1] . ':function\(\w,\w\){var \w=\w\[0];\w\[0]=\w\[\w%\w\.length];\w\[\w%\w\.length]=\w}/', $script)) {
                         $res[] = "c" . $func[2];
-                    } else if (preg_match('/' . $func[1] . ':function\(a,b\){a\.splice\(0,b\)}/', $script)) {
+                    } else if (preg_match('/' . $func[1] . ':function\(\w,\w\){\w\.splice\(0,\w\)}/', $script)) {
                         $res[] = "s" . $func[2];
                     } else {
                         $res[] = "u:" . $func[0];
@@ -259,7 +259,7 @@ if (isset($_GET["search"])) {
     $html = file_get_contents("https://www.youtube.com/watch?v=" . $_GET["v"]);
 
     $formats = [];
-    if (preg_match('/"formats(.?)":(\[[^]]+])/', $html, $match)) {
+    if (preg_match('/"formats(.?)":(\[.+?])/', $html, $match)) {
         if (strlen($match[1])) {
             $match[2] = stripslashes($match[2]);
         }
@@ -304,7 +304,7 @@ if (isset($_GET["search"])) {
             $url = urldecode($formats[$id]["url"]);
             $mimeType = $formats[$id]["mimeType"];
             $qualityLabel = $formats[$id]["qualityLabel"];
-        } else if (isset($formats[$id]["signatureCipher"]) && preg_match('/"jsUrl":"([^"]+)"/', $html, $js)) {
+        } else if (isset($formats[$id]["signatureCipher"]) && preg_match('/"jsUrl":"(.+?)"/', $html, $js)) {
             $js = $js[1];
             $cache_js = str_replace("/", "_", $js);
             $cache_js = str_replace(".", "_", $cache_js);
