@@ -2722,7 +2722,7 @@ function normalizeVideoDuration(duration) {
                   var script_length = script.length;
                   var modify = [];
                   for (var ii = 0; ii < script_length; ii++) {
-                    var func = script[ii].match(/[\w\d]+\.([\w\d]+)\(\w,(\d+)\)/);
+                    var func = script[ii].match(/\w+\.(\w+)\(\w,(\d+)\)/);
                     //debug(func);
                     //var tmp = result_js.match(new RegExp(func[1] + ':function\\(a\\){a\\.reverse\\(\\)}')) || [];
                     var tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w\\){\\w\\.reverse\\(\\)}')) || [];
