@@ -240,7 +240,7 @@ if (isset($_GET["search"])) {
             $functions = explode(";", $functions[1]);
 
             foreach ($functions as $function) {
-                if (preg_match('/[\w\d]+\.([\w\d]+)\(\w,(\d+)\)/', $function, $func)) {
+                if (preg_match('/\w+\.(\w+)\(\w,(\d+)\)/', $function, $func)) {
                     if (preg_match('/' . $func[1] . ':function\(\w\){\w\.reverse\(\)}/', $script)) {
                         $res[] = "r";
                     } else if (preg_match('/' . $func[1] . ':function\(\w,\w\){var \w=\w\[0];\w\[0]=\w\[\w%\w\.length];\w\[\w%\w\.length]=\w}/', $script)) {
