@@ -2688,7 +2688,8 @@ function normalizeVideoDuration(duration) {
                 });
               }
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
-              var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,(?:""|\("",""\))\)|a\.split\((?:""|a\.slice\(0,0\))\)),c=.+?(?:Array\.prototype\.join\.call\(b,(?:""|\("",""\))\)|b\.join\(""\))}/);
+              //var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,(?:""|\("",""\))\)|a\.split\((?:""|a\.slice\(0,0\))\)),c=.+?(?:Array\.prototype\.join\.call\(b,(?:""|\("",""\))\)|b\.join\(""\))}/);
+              var throttle = result_js.match(/function\(\w\){var \w=(?:String\.prototype\.split\.call\(\w,(?:""|\("",""\))\)|\w\.split\((?:""|\w\.slice\(0,0\))\)),\w=.+?(?:Array\.prototype\.join\.call\(\w,(?:""|\("",""\))\)|\w\.join\(""\))}/);
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
@@ -2714,7 +2715,8 @@ function normalizeVideoDuration(duration) {
                   $scope.movie.url = url;
                   $scope.play(data);
                 } else if (formats[id].hasOwnProperty("signatureCipher")) {
-                  var script = result_js.match(/a=a\.split\(""\);(.+?);return a\.join\(""\)/);
+                  //var script = result_js.match(/a=a\.split\(""\);(.+?);return a\.join\(""\)/);
+                  var script = result_js.match(/\w=\w\.split\(""\);(.+?);return \w\.join\(""\)/);
                   script = script[1].split(";");
                   //debug(script);
                   var script_length = script.length;
@@ -2722,17 +2724,20 @@ function normalizeVideoDuration(duration) {
                   for (var ii = 0; ii < script_length; ii++) {
                     var func = script[ii].match(/[\w\d]+\.([\w\d]+)\(a,(\d+)\)/);
                     //debug(func);
-                    var tmp = result_js.match(new RegExp(func[1] + ':function\\(a\\){a\\.reverse\\(\\)}')) || [];
+                    //var tmp = result_js.match(new RegExp(func[1] + ':function\\(a\\){a\\.reverse\\(\\)}')) || [];
+                    var tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w\\){\\w\\.reverse\\(\\)}')) || [];
                     if (tmp.length) {
                       modify.push("r");
                       continue;
                     }
-                    tmp = result_js.match(new RegExp(func[1] + ':function\\(a,b\\){var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b%a\\.length\\]=c}')) || [];
+                    //tmp = result_js.match(new RegExp(func[1] + ':function\\(a,b\\){var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b%a\\.length\\]=c}')) || [];
+                    tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w,\\w\\){var \\w=\\w\\[0\\];\\w\\[0\\]=\\w\\[\\w%\\w\\.length\\];\\w\\[\\w%\\w\\.length\\]=\\w}')) || [];
                     if (tmp.length) {
                       modify.push("c" + func[2]);
                       continue;
                     }
-                    tmp = result_js.match(new RegExp(func[1] + ':function\\(a,b\\){a\\.splice\\(0,b\\)}')) || [];
+                    //tmp = result_js.match(new RegExp(func[1] + ':function\\(a,b\\){a\\.splice\\(0,b\\)}')) || [];
+                    tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w,\\w\\){\\w\\.splice\\(0,\\w\\)}')) || [];
                     if (tmp.length) {
                       modify.push("s" + func[2]);
                     }
