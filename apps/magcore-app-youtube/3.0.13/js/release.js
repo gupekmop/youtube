@@ -2689,12 +2689,12 @@ function normalizeVideoDuration(duration) {
               }
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
               //var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,(?:""|\("",""\))\)|a\.split\((?:""|a\.slice\(0,0\))\)),c=.+?(?:Array\.prototype\.join\.call\(b,(?:""|\("",""\))\)|b\.join\(""\))}/);
-              var throttle = result_js.match(/function\(\w\){var \w=(?:String\.prototype\.split\.call\(\w,(?:""|\("",""\))\)|\w\.split\((?:""|\w\.slice\(0,0\))\)),\w=.+?(?:Array\.prototype\.join\.call\(\w,(?:""|\("",""\))\)|\w\.join\(""\))}/);
+              var throttle = result_js.match(/function\([\w$]\){var [\w$]=(?:String\.prototype\.split\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.split\((?:""|[\w$]\.slice\(0,0\))\)),[\w$]=.+?(?:Array\.prototype\.join\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.join\(""\))}/);
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
                 //debug(throttle[0]);
-                throttle[0] = throttle[0].replace(/if\(typeof \w+==="undefined"\)return \w;/g, '');
+                throttle[0] = throttle[0].replace(/if\(typeof [\w$]+==="undefined"\)return [\w$];/g, '');
                 try {
                   eval('unthrottle = ' + throttle[0]);
                 } catch (e) {
@@ -2717,13 +2717,13 @@ function normalizeVideoDuration(duration) {
                   $scope.play(data);
                 } else if (formats[id].hasOwnProperty("signatureCipher")) {
                   //var script = result_js.match(/a=a\.split\(""\);(.+?);return a\.join\(""\)/);
-                  var script = result_js.match(/\w=\w\.split\(""\);(.+?);return \w\.join\(""\)/);
+                  var script = result_js.match(/[\w$]=[\w$]\.split\(""\);(.+?);return [\w$]\.join\(""\)/);
                   script = script[1].split(";");
                   //debug(script);
                   var script_length = script.length;
                   var modify = [];
                   for (var ii = 0; ii < script_length; ii++) {
-                    var func = script[ii].match(/\w+\.(\w+)\(\w,(\d+)\)/);
+                    var func = script[ii].match(/[\w$]+\.([\w$]+)\([\w$],(\d+)\)/);
                     //debug(func);
                     //var tmp = result_js.match(new RegExp(func[1] + ':function\\(a\\){a\\.reverse\\(\\)}')) || [];
                     var tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w\\){\\w\\.reverse\\(\\)}')) || [];
