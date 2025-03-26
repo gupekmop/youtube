@@ -2689,12 +2689,19 @@ function normalizeVideoDuration(duration) {
               }
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
               //var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,(?:""|\("",""\))\)|a\.split\((?:""|a\.slice\(0,0\))\)),c=.+?(?:Array\.prototype\.join\.call\(b,(?:""|\("",""\))\)|b\.join\(""\))}/);
-              var throttle = result_js.match(/function\([\w$]\){var [\w$]=(?:String\.prototype\.split\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.split\((?:""|[\w$]\.slice\(0,0\))\)),[\w$]=.+?(?:Array\.prototype\.join\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.join\(""\))}/);
+              var throttle = result_js.match(/function\([\w$]\){var [\w$]=(?:String\.prototype\.split\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.split\((?:""|[\w$]\.slice\(0,0\))\)),[\w$]=.+?(?:Array\.prototype\.join\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.join\((?:""|([\w$]+)\[\d+])\))}/);
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
+                if (throttle[1]) {
+                  var arr = result_js.match(new RegExp("(var " + throttle[1] + "=\\[.+?]),[\\w$]"));
+                  if (arr) {
+                    eval(arr[1]);
+                  }
+                }
+
                 //debug(throttle[0]);
-                throttle[0] = throttle[0].replace(/if\(typeof [\w$]+==="undefined"\)return [\w$];/g, '');
+                throttle[0] = throttle[0].replace(/if\(typeof [\w$]+===("undefined"|[\w$]+\[\d+])\)return [\w$];/g, '');
                 try {
                   eval('unthrottle = ' + throttle[0]);
                 } catch (e) {
@@ -2717,7 +2724,7 @@ function normalizeVideoDuration(duration) {
                   $scope.play(data);
                 } else if (formats[id].hasOwnProperty("signatureCipher")) {
                   //var script = result_js.match(/a=a\.split\(""\);(.+?);return a\.join\(""\)/);
-                  var script = result_js.match(/[\w$]=[\w$]\.split\(""\);(.+?);return [\w$]\.join\(""\)/);
+                  var script = result_js.match(/{[\w$]=[\w$]\.split\((?:""|[\w$]+\[\d+])\);([\w$]+\..+?);return [\w$]\.join\((?:""|[\w$]+\[\d+])\)}/);
                   script = script[1].split(";");
                   //debug(script);
                   var script_length = script.length;

@@ -236,7 +236,7 @@ if (isset($_GET["search"])) {
     {
         $res = [];
         $script = file_get_contents($script);
-        if (preg_match('/\w=\w\.split\(""\);(.+?);return \w\.join\(""\)/', $script, $functions)) {
+        if (preg_match('/{[\w$]=[\w$]\.split\((?:""|[\w$]+\[\d+])\);([\w$]+\..+?);return [\w$]\.join\((?:""|[\w$]+\[\d+])\)}/', $script, $functions)) {
             $functions = explode(";", $functions[1]);
 
             foreach ($functions as $function) {
