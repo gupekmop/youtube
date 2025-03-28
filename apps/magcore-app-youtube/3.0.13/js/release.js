@@ -2677,7 +2677,7 @@ function normalizeVideoDuration(duration) {
           var base_js = result.match(/"jsUrl":"(.+?)"/);
           if (base_js) {
             base_js = base_js[1];
-            //debug(base_js);
+            debug(base_js);
             ajax("get", "https://www.youtube.com" + base_js, function (result_js, status_js) {
               if (status_js !== 200) {
                 return window.core.notify({
@@ -2694,16 +2694,20 @@ function normalizeVideoDuration(duration) {
               var throttle_decode;
               if (throttle) {
                 if (throttle[1]) {
-                  var arr = result_js.match(new RegExp("(var " + throttle[1] + "=\\[.+?]),[\\w$]"));
+                  var arr = result_js.match(new RegExp("var " + throttle[1] + "=(\\[.+?]|'.+?'\.split\(\".+?\"\)),\\s*[\\w$]"));
                   if (arr) {
-                    eval(arr[1]);
+                    try {
+                      eval("var " + throttle[1] + " = " + arr[1]);
+                    } catch (e) {
+                      debug(e);
+                    }
                   }
                 }
 
                 //debug(throttle[0]);
                 throttle[0] = throttle[0].replace(/if\(typeof [\w$]+===("undefined"|[\w$]+\[\d+])\)return [\w$];/g, '');
                 try {
-                  eval('unthrottle = ' + throttle[0]);
+                  eval("unthrottle = " + throttle[0]);
                 } catch (e) {
                   debug(e);
                 }
