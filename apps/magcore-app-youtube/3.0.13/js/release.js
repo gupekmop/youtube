@@ -2690,16 +2690,14 @@ function normalizeVideoDuration(duration) {
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
               var throttle = result_js.match(/function\(([\w$])\){var ([\w$])=(?:String\.prototype\.split\.call\(\1,(?:""|\("",""\))\)|\1\.split\((?:""|\1\.slice\(0,0\))\)),.+?(?:Array\.prototype\.join\.call\(\2,(?:""|\("",""\))\)|\2\.join\((?:""|([\w$]+)\[\d+])\))}/);
               var unthrottle = function(a){return a};
+              var paramVar = [];
               var throttle_decode;
               if (throttle) {
                 if (throttle[3]) {
-                  debug(throttle[3]);
-                  debug(new RegExp("var " + throttle[3] + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   var arr = result_js.match(new RegExp("var " + throttle[3] + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   if (arr) {
-                    debug(arr[1]);
                     try {
-                      eval("var " + throttle[3] + " = " + arr[1]);
+                      eval("paramVar = " + arr[1]);
                     } catch (e) {
                       debug(e);
                     }
@@ -2708,6 +2706,9 @@ function normalizeVideoDuration(duration) {
 
                 //debug(throttle[0]);
                 throttle[0] = throttle[0].replace(/if\(typeof [\w$]+===("undefined"|[\w$]+\[\d+])\)return [\w$];/g, '');
+                if (throttle[3]) {
+                  throttle[0] = throttle[0].replace(new RegExp(throttle[3] + "\\[", "g"), 'paramVar[')
+                }
                 try {
                   eval("unthrottle = " + throttle[0]);
                 } catch (e) {
