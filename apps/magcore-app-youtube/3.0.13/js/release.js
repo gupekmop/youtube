@@ -2688,16 +2688,15 @@ function normalizeVideoDuration(duration) {
                 });
               }
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
-              //var throttle = result_js.match(/function\(a\){var b=(?:String\.prototype\.split\.call\(a,(?:""|\("",""\))\)|a\.split\((?:""|a\.slice\(0,0\))\)),c=.+?(?:Array\.prototype\.join\.call\(b,(?:""|\("",""\))\)|b\.join\(""\))}/);
-              var throttle = result_js.match(/function\([\w$]\){var [\w$]=(?:String\.prototype\.split\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.split\((?:""|[\w$]\.slice\(0,0\))\)),[\w$]=.+?(?:Array\.prototype\.join\.call\([\w$],(?:""|\("",""\))\)|[\w$]\.join\((?:""|([\w$]+)\[\d+])\))}/);
+              var throttle = result_js.match(/function\(([\w$])\){var ([\w$])=(?:String\.prototype\.split\.call\(\1,(?:""|\("",""\))\)|\1\.split\((?:""|\1\.slice\(0,0\))\)),.+?(?:Array\.prototype\.join\.call\(\2,(?:""|\("",""\))\)|\2\.join\((?:""|([\w$]+)\[\d+])\))}/);
               var unthrottle = function(a){return a};
               var throttle_decode;
               if (throttle) {
-                if (throttle[1]) {
-                  var arr = result_js.match(new RegExp("var " + throttle[1] + "=(\\[.+?]|['\"].+?['\"]\.split\(['\"].+?['\"]\)),\\s*[\\w$]"));
+                if (throttle[3]) {
+                  var arr = result_js.match(new RegExp("var " + throttle[3] + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   if (arr) {
                     try {
-                      eval("var " + throttle[1] + " = " + arr[1]);
+                      eval("var " + throttle[3] + " = " + arr[1]);
                     } catch (e) {
                       debug(e);
                     }
@@ -2727,50 +2726,48 @@ function normalizeVideoDuration(duration) {
                   $scope.movie.url = url;
                   $scope.play(data);
                 } else if (formats[id].hasOwnProperty("signatureCipher")) {
-                  //var script = result_js.match(/a=a\.split\(""\);(.+?);return a\.join\(""\)/);
-                  var script = result_js.match(/{[\w$]=[\w$]\.split\((?:""|[\w$]+\[\d+])\);([\w$]+\..+?);return [\w$]\.join\((?:""|[\w$]+\[\d+])\)}/);
-                  script = script[1].split(";");
-                  //debug(script);
-                  var script_length = script.length;
-                  var modify = [];
-                  for (var ii = 0; ii < script_length; ii++) {
-                    var func = script[ii].match(/[\w$]+\.([\w$]+)\([\w$],(\d+)\)/);
-                    //debug(func);
-                    //var tmp = result_js.match(new RegExp(func[1] + ':function\\(a\\){a\\.reverse\\(\\)}')) || [];
-                    var tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w\\){\\w\\.reverse\\(\\)}')) || [];
-                    if (tmp.length) {
-                      modify.push("r");
-                      continue;
+                  var script = result_js.match(/{(\w)=\1\.split\((?:['"]{2}|[\w$]+\[\d+])\);((?:[\w$]+\.[\w$]+\(\1,\d+\);)+)return \1\.join\((?:['"]{2}|[\w$]+\[\d+])\)}/);
+                  if (script) {
+                    script = script[2].substr(0, script[2].length - 1).split(";");
+                    //debug(script);
+                    var script_length = script.length;
+                    var modify = [];
+                    for (var ii = 0; ii < script_length; ii++) {
+                      var func = script[ii].match(/[\w$]+\.([\w$]+)\([\w$],(\d+)\)/);
+                      //debug(func);
+                      var tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w)\\){\\1\\.reverse\\(\\)}")) || [];
+                      if (tmp.length) {
+                        modify.push("r");
+                        continue;
+                      }
+                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){var (\\w)=\\1\\[0];\\1\\[0]=\\1\\[\\2%\\1\\.length];\\1\\[\\2%\\1\\.length]=\\3}")) || [];
+                      if (tmp.length) {
+                        modify.push("c" + func[2]);
+                        continue;
+                      }
+                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){\\1\\.splice\\(0,\\2\\)}")) || [];
+                      if (tmp.length) {
+                        modify.push("s" + func[2]);
+                      }
                     }
-                    //tmp = result_js.match(new RegExp(func[1] + ':function\\(a,b\\){var c=a\\[0\\];a\\[0\\]=a\\[b%a\\.length\\];a\\[b%a\\.length\\]=c}')) || [];
-                    tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w,\\w\\){var \\w=\\w\\[0\\];\\w\\[0\\]=\\w\\[\\w%\\w\\.length\\];\\w\\[\\w%\\w\\.length\\]=\\w}')) || [];
-                    if (tmp.length) {
-                      modify.push("c" + func[2]);
-                      continue;
-                    }
-                    //tmp = result_js.match(new RegExp(func[1] + ':function\\(a,b\\){a\\.splice\\(0,b\\)}')) || [];
-                    tmp = result_js.match(new RegExp(func[1] + ':function\\(\\w,\\w\\){\\w\\.splice\\(0,\\w\\)}')) || [];
-                    if (tmp.length) {
-                      modify.push("s" + func[2]);
-                    }
-                  }
-                  var signatureCipher = formats[id]["signatureCipher"].split("&");
-                  //debug(signatureCipher);
-                  var signature = decodeURIComponent(signatureCipher[0].substr(2));
-                  //debug(signature);
-                  //debug(decipher(modify.join(";"), signature));
-                  debug("CIPHER #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
-                  url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(modify.join(";"), signature));
-                  //debug(url);
-                  throttle = url.match(/&n=(.+?)&/);
-                  if (throttle) {
-                    throttle_decode = unthrottle(throttle[1]);
-                    url = url.replace(throttle[1], throttle_decode);
-                    //debug(throttle[1] + " => " + throttle_decode);
+                    var signatureCipher = formats[id]["signatureCipher"].split("&");
+                    //debug(signatureCipher);
+                    var signature = decodeURIComponent(signatureCipher[0].substr(2));
+                    //debug(signature);
+                    //debug(decipher(modify.join(";"), signature));
+                    debug("CIPHER #" + (id + 1) + "/" + length + ", mimeType: " + formats[id]["mimeType"] + ", qualityLabel: " + formats[id]["qualityLabel"]);
+                    url = decodeURIComponent(signatureCipher[2].substr(4)) + "&sig=" + encodeURIComponent(decipher(modify.join(";"), signature));
                     //debug(url);
+                    throttle = url.match(/&n=(.+?)&/);
+                    if (throttle) {
+                      throttle_decode = unthrottle(throttle[1]);
+                      url = url.replace(throttle[1], throttle_decode);
+                      //debug(throttle[1] + " => " + throttle_decode);
+                      //debug(url);
+                    }
+                    $scope.movie.url = url;
+                    $scope.play(data);
                   }
-                  $scope.movie.url = url;
-                  $scope.play(data);
                 }
               } else {
                 debug("MODULE 36 - FORMATS NOT FOUND");

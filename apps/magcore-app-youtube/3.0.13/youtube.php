@@ -236,16 +236,16 @@ if (isset($_GET["search"])) {
     {
         $res = [];
         $script = file_get_contents($script);
-        if (preg_match('/{[\w$]=[\w$]\.split\((?:""|[\w$]+\[\d+])\);([\w$]+\..+?);return [\w$]\.join\((?:""|[\w$]+\[\d+])\)}/', $script, $functions)) {
+        if (preg_match('/{(\w)=\1\.split\((?:[\'"]{2}|[\w$]+\[\d+])\);((?:[\w$]+\.[\w$]+\(\1,\d+\);)+)return \1\.join\((?:[\'"]{2}|[\w$]+\[\d+])\)}/', $script, $functions)) {
             $functions = explode(";", $functions[1]);
 
             foreach ($functions as $function) {
                 if (preg_match('/\w+\.(\w+)\(\w,(\d+)\)/', $function, $func)) {
-                    if (preg_match('/' . $func[1] . ':function\(\w\){\w\.reverse\(\)}/', $script)) {
+                    if (preg_match('/' . $func[1] . ':function\((\w)\){\1\.reverse\(\)}/', $script)) {
                         $res[] = "r";
-                    } else if (preg_match('/' . $func[1] . ':function\(\w,\w\){var \w=\w\[0];\w\[0]=\w\[\w%\w\.length];\w\[\w%\w\.length]=\w}/', $script)) {
+                    } else if (preg_match('/' . $func[1] . ':function\((\w),(\w)\){var (\w)=\1\[0];\1\[0]=\1\[\2%\1\.length];\1\[\2%\1\.length]=\3}/', $script)) {
                         $res[] = "c" . $func[2];
-                    } else if (preg_match('/' . $func[1] . ':function\(\w,\w\){\w\.splice\(0,\w\)}/', $script)) {
+                    } else if (preg_match('/' . $func[1] . ':function\((\w),(\w)\){\1\.splice\(0,\2\)}/', $script)) {
                         $res[] = "s" . $func[2];
                     } else {
                         $res[] = "u:" . $func[0];
