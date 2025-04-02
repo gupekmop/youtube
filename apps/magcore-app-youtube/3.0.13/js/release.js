@@ -2693,8 +2693,11 @@ function normalizeVideoDuration(duration) {
               var throttle_decode;
               if (throttle) {
                 if (throttle[3]) {
+                  debug(throttle[3]);
+                  debug(new RegExp("var " + throttle[3] + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   var arr = result_js.match(new RegExp("var " + throttle[3] + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   if (arr) {
+                    debug(arr[1]);
                     try {
                       eval("var " + throttle[3] + " = " + arr[1]);
                     } catch (e) {
