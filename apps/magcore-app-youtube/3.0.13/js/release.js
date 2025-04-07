@@ -2694,7 +2694,7 @@ function normalizeVideoDuration(duration) {
               var throttle_decode;
               if (throttle) {
                 if (throttle[3]) {
-                  var arr = result_js.match(new RegExp("var " + throttle[3] + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
+                  var arr = result_js.match(new RegExp("var " + throttle[3].replace(/\$/g, '\\$') + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   if (arr) {
                     try {
                       eval("paramVar = " + arr[1]);
@@ -2707,7 +2707,7 @@ function normalizeVideoDuration(duration) {
                 //debug(throttle[0]);
                 throttle[0] = throttle[0].replace(/if\(typeof [\w$]+===("undefined"|[\w$]+\[\d+])\)return [\w$];/g, '');
                 if (throttle[3]) {
-                  throttle[0] = throttle[0].replace(new RegExp(throttle[3] + "\\[", "g"), 'paramVar[')
+                  throttle[0] = throttle[0].replace(new RegExp(throttle[3].replace(/\$/g, '\\$') + "\\[", "g"), 'paramVar[')
                 }
                 try {
                   eval("unthrottle = " + throttle[0]);
@@ -2766,7 +2766,7 @@ function normalizeVideoDuration(duration) {
                     if (throttle) {
                       throttle_decode = unthrottle(throttle[1]);
                       url = url.replace(throttle[1], throttle_decode);
-                      //debug(throttle[1] + " => " + throttle_decode);
+                      debug(throttle[1] + " => " + throttle_decode);
                       //debug(url);
                     }
                     $scope.movie.url = url;
