@@ -2592,6 +2592,64 @@ function normalizeVideoDuration(duration) {
     return res.join("");
   }
 
+  function getModify(result_js, paramVar) {
+    var script_length;
+    var modify = [];
+    var ii;
+    var func;
+    var tmp;
+
+    var script = result_js.match(/{(\w)=\1\.split\((?:['"]{2}|[\w$]+\[\d+])\);((?:[\w$]+\.[\w$]+\(\1,\d+\);)+)return \1\.join\((?:['"]{2}|[\w$]+\[\d+])\)}/);
+    if (script) {
+      script = script[2].substr(0, script[2].length - 1).split(";");
+      //debug(script);
+      script_length = script.length;
+      for (ii = 0; ii < script_length; ii++) {
+        func = script[ii].match(/[\w$]+\.([\w$]+)\([\w$],(\d+)\)/);
+        //debug(func);
+        tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w)\\){\\1\\.reverse\\(\\)}")) || [];
+        if (tmp.length) {
+          modify.push("r");
+          continue;
+        }
+        tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){var (\\w)=\\1\\[0];\\1\\[0]=\\1\\[\\2%\\1\\.length];\\1\\[\\2%\\1\\.length]=\\3}")) || [];
+        if (tmp.length) {
+          modify.push("c" + func[2]);
+          continue;
+        }
+        tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){\\1\\.splice\\(0,\\2\\)}")) || [];
+        if (tmp.length) {
+          modify.push("s" + func[2]);
+        }
+      }
+    } else {
+      script = result_js.match(/function\((\w+)\){\1=\1\[([\w$]+)\[\d+]]\(\2\[\d+]\);(.+?)return \1\[\2\[\d+]]\(\2\[\d+]\)}/);
+      if (script) {
+        script = script[3].substr(0, script[3].length - 1).split(";");
+        script_length = script.length;
+        for (ii = 0; ii < script_length; ii++) {
+          func = script[ii].match(/\[[\w$]+\[(\d+)]]\([\w$]+,(\d+)\)/);
+          //debug(func);
+          tmp = result_js.match(new RegExp(paramVar[func[1]].replace(/\$/g, '\\$') + ":function\\((\\w)\\){\\1\\[[\\w$]+\\[\\d+]]\\(\\)}")) || [];
+          if (tmp.length) {
+            modify.push("r");
+            continue;
+          }
+          tmp = result_js.match(new RegExp(paramVar[func[1]].replace(/\$/g, '\\$') + ":function\\((\\w),(\\w)\\){var (\\w)=\\1\\[0];\\1\\[0]=\\1\\[\\2%\\1\\[[\\w$]+\\[\\d+]]];\\1\\[\\2%\\1\\[[\\w$]+\\[\\d+]]]=\\3}")) || [];
+          if (tmp.length) {
+            modify.push("c" + func[2]);
+            continue;
+          }
+          tmp = result_js.match(new RegExp(paramVar[func[1]].replace(/\$/g, '\\$') + ":function\\((\\w),(\\w)\\){\\1\\[[\\w$]+\\[\\d+]]\\(0,\\2\\)}")) || [];
+          if (tmp.length) {
+            modify.push("s" + func[2]);
+          }
+        }
+      }
+    }
+    return modify;
+  }
+
   var mockFormAttributeDataResponse;
   var event = require(1);
   var o = false;
@@ -2742,30 +2800,8 @@ function normalizeVideoDuration(duration) {
                   $scope.movie.url = url;
                   $scope.play(data);
                 } else if (formats[id].hasOwnProperty("signatureCipher")) {
-                  var script = result_js.match(/{(\w)=\1\.split\((?:['"]{2}|[\w$]+\[\d+])\);((?:[\w$]+\.[\w$]+\(\1,\d+\);)+)return \1\.join\((?:['"]{2}|[\w$]+\[\d+])\)}/);
-                  if (script) {
-                    script = script[2].substr(0, script[2].length - 1).split(";");
-                    //debug(script);
-                    var script_length = script.length;
-                    var modify = [];
-                    for (var ii = 0; ii < script_length; ii++) {
-                      var func = script[ii].match(/[\w$]+\.([\w$]+)\([\w$],(\d+)\)/);
-                      //debug(func);
-                      var tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w)\\){(?:\\1\\.reverse\\(\\)|\\1\\[[\\w$]+\\[\\d+]]\\(\\))}")) || [];
-                      if (tmp.length) {
-                        modify.push("r");
-                        continue;
-                      }
-                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){var (\\w)=\\1\\[0];\\1\\[0]=\\1\\[\\2%\\1(?:\\.length|\\[[\\w$]+\\[\\d+]])];\\1\\[\\2%\\1(?:\\.length|\\[[\\w$]+\\[\\d+]])]=\\3}")) || [];
-                      if (tmp.length) {
-                        modify.push("c" + func[2]);
-                        continue;
-                      }
-                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){(?:\\1\\.splice\\(0,\\2\\)|\\1\\[[\\w$]+\\[\\d+]]\\(0,\\2\\))}")) || [];
-                      if (tmp.length) {
-                        modify.push("s" + func[2]);
-                      }
-                    }
+                  var modify = getModify(result_js, paramVar);
+                  if (modify.length > 0) {
                     var signatureCipher = formats[id]["signatureCipher"].split("&");
                     //debug(signatureCipher);
                     var signature = decodeURIComponent(signatureCipher[0].substr(2));
@@ -2799,16 +2835,20 @@ function normalizeVideoDuration(duration) {
                   result = JSON.parse(result);
                   if (result.url) {
                     //debug(result.url);
-                    url = result.url;
-                    throttle = url.match(/&n=(.+?)&/);
-                    if (throttle) {
-                      throttle_decode = unthrottle(throttle[1]);
-                      url = url.replace(throttle[1], throttle_decode);
-                      //debug(throttle[1] + " => " + throttle_decode);
-                      //debug(url);
+                    var modify = getModify(result_js, paramVar);
+                    if (modify.length > 0) {
+                      url = result.url;
+                      url = url + "&sig=" + decipher(modify.join(";"), result.signature);
+                      throttle = url.match(/&n=(.+?)&/);
+                      if (throttle) {
+                        throttle_decode = unthrottle(throttle[1]);
+                        url = url.replace(throttle[1], throttle_decode);
+                        debug(throttle[1] + " => " + throttle_decode);
+                        //debug(url);
+                      }
+                      $scope.movie.url = url;
+                      $scope.play(data);
                     }
-                    $scope.movie.url = url;
-                    $scope.play(data);
                   } else {
                     return window.core.notify({
                       title: gettext("Video is not available"),
