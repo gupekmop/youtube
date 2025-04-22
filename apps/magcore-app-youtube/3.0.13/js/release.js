@@ -2688,13 +2688,23 @@ function normalizeVideoDuration(duration) {
                 });
               }
               result_js = result_js.replace(/(\r\n|\n|\r)/g, ' ');
-              var throttle = result_js.match(/function\(([\w$])\){var ([\w$])=(?:String\.prototype\.split\.call\(\1,(?:""|\("",""\))\)|\1\.split\((?:""|\1\.slice\(0,0\))\)),.+?(?:Array\.prototype\.join\.call\(\2,(?:""|\("",""\))\)|\2\.join\((?:""|([\w$]+)\[\d+])\))}/);
+              var throttle = result_js.match(/function\(([\w$])\){var ([\w$])=(?:String\.prototype\.split\.call\(\1,(?:""|\("",""\))\)|\1\.split\((?:""|\1\.slice\(0,0\))\)|\1\[([\w$]+)\[\d+]].+?),.+?return (?:Array\.prototype\.join\.call\(\2,(?:""|\("",""\))\)|\2\.join\((?:""|([\w$]+)\[\d+])\)|\2.+?)}/);
               var unthrottle = function(a){return a};
               var paramVar = [];
               var throttle_decode;
               if (throttle) {
+                var arr;
                 if (throttle[3]) {
-                  var arr = result_js.match(new RegExp("var " + throttle[3].replace(/\$/g, '\\$') + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
+                  arr = result_js.match(new RegExp("var " + throttle[3].replace(/\$/g, '\\$') + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
+                  if (arr) {
+                    try {
+                      eval("paramVar = " + arr[1]);
+                    } catch (e) {
+                      debug(e);
+                    }
+                  }
+                } else if (throttle[4]) {
+                  arr = result_js.match(new RegExp("var " + throttle[4].replace(/\$/g, '\\$') + "=(\\[.+?]|(['\"]).+?\\2\\.split\\((['\"]).+?\\3\\)),\\s*[\\w$]"));
                   if (arr) {
                     try {
                       eval("paramVar = " + arr[1]);
@@ -2708,6 +2718,8 @@ function normalizeVideoDuration(duration) {
                 throttle[0] = throttle[0].replace(/if\(typeof [\w$]+===("undefined"|[\w$]+\[\d+])\)return [\w$];/g, '');
                 if (throttle[3]) {
                   throttle[0] = throttle[0].replace(new RegExp(throttle[3].replace(/\$/g, '\\$') + "\\[", "g"), 'paramVar[')
+                } else if (throttle[4]) {
+                  throttle[0] = throttle[0].replace(new RegExp(throttle[4].replace(/\$/g, '\\$') + "\\[", "g"), 'paramVar[')
                 }
                 try {
                   eval("unthrottle = " + throttle[0]);
@@ -2739,17 +2751,17 @@ function normalizeVideoDuration(duration) {
                     for (var ii = 0; ii < script_length; ii++) {
                       var func = script[ii].match(/[\w$]+\.([\w$]+)\([\w$],(\d+)\)/);
                       //debug(func);
-                      var tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w)\\){\\1\\.reverse\\(\\)}")) || [];
+                      var tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w)\\){(?:\\1\\.reverse\\(\\)|\\1\\[[\\w$]+\\[\\d+]]\\(\\))}")) || [];
                       if (tmp.length) {
                         modify.push("r");
                         continue;
                       }
-                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){var (\\w)=\\1\\[0];\\1\\[0]=\\1\\[\\2%\\1\\.length];\\1\\[\\2%\\1\\.length]=\\3}")) || [];
+                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){var (\\w)=\\1\\[0];\\1\\[0]=\\1\\[\\2%\\1(?:\\.length|\\[[\\w$]+\\[\\d+]])];\\1\\[\\2%\\1(?:\\.length|\\[[\\w$]+\\[\\d+]])]=\\3}")) || [];
                       if (tmp.length) {
                         modify.push("c" + func[2]);
                         continue;
                       }
-                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){\\1\\.splice\\(0,\\2\\)}")) || [];
+                      tmp = result_js.match(new RegExp(func[1] + ":function\\((\\w),(\\w)\\){(?:\\1\\.splice\\(0,\\2\\)|\\1\\[[\\w$]+\\[\\d+]]\\(0,\\2\\))}")) || [];
                       if (tmp.length) {
                         modify.push("s" + func[2]);
                       }
