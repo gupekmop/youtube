@@ -283,6 +283,7 @@ if (isset($_GET["search"])) {
     $mimeType = "";
     $qualityLabel = "";
     $license = false;
+    $signature = "";
     $old_mag = in_array($_GET["model"], ["MAG250", "MAG254", "MAG275", "MAG276"]);
 
     foreach ($formats as $key => $format) {
@@ -304,30 +305,30 @@ if (isset($_GET["search"])) {
             $url = urldecode($formats[$id]["url"]);
             $mimeType = $formats[$id]["mimeType"];
             $qualityLabel = $formats[$id]["qualityLabel"];
-        } else if (isset($formats[$id]["signatureCipher"]) && preg_match('/"jsUrl":"(.+?)"/', $html, $js)) {
-            $js = $js[1];
-            $cache_js = str_replace("/", "_", $js);
-            $cache_js = str_replace(".", "_", $cache_js);
+        } else if (isset($formats[$id]["signatureCipher"])/* && preg_match('/"jsUrl":"(.+?)"/', $html, $js)*/) {
+            //$js = $js[1];
+            //$cache_js = str_replace("/", "_", $js);
+            //$cache_js = str_replace(".", "_", $cache_js);
 
-            if (($modify = @file("cache/" . $cache_js)) === false) {
-                $modify = getBase("https://www.youtube.com" . $js);
-                file_put_contents("cache/" . $cache_js, implode("\n", $modify), FILE_APPEND | LOCK_EX);
-            } else {
-                $modify = array_map("trim", $modify);
-            }
+            //if (($modify = @file("cache/" . $cache_js)) === false) {
+            //    $modify = getBase("https://www.youtube.com" . $js);
+            //    file_put_contents("cache/" . $cache_js, implode("\n", $modify), FILE_APPEND | LOCK_EX);
+            //} else {
+            //    $modify = array_map("trim", $modify);
+            //}
 
             parse_str($formats[$id]["signatureCipher"], $signatureCipher);
 
             $signature = urldecode($signatureCipher["s"]);
-            $decipher = decipher($modify, $signature);
+            //$decipher = decipher($modify, $signature);
             $url = urldecode($signatureCipher["url"]);
-            $url .= "&sig=" . $decipher;
+            //$url .= "&sig=" . $decipher;
             $mimeType = $formats[$id]["mimeType"];
             $qualityLabel = $formats[$id]["qualityLabel"];
             $license = true;
         }
     }
-    echo json_encode(["id" => $id, "url" => $url, "mimeType" => $mimeType, "qualityLabel" => $qualityLabel, "width" => $width, "license" => $license]);
+    echo json_encode(["id" => $id, "url" => $url, "mimeType" => $mimeType, "qualityLabel" => $qualityLabel, "width" => $width, "license" => $license, "signature" => $signature]);
 } else {
     $filename = "cache/trending" . (isset($_GET["pageToken"]) ? "_" . $_GET["pageToken"] : "") . ".json";
     if (($time = filemtime($filename)) !== false && time() - $time < $CFG["index"]["cacheTime"] * 60 && filesize($filename) > 0) {
